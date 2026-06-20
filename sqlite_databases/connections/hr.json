@@ -1,0 +1,8 @@
+{
+  "name": "Demo HR (SQLite)",
+  "connector_type": "sqlite",
+  "connection_config": {
+    "file_path": "{{REPO_ROOT}}/sqlite_databases/databases/hr.sqlite"
+  },
+  "is_active": true
+}

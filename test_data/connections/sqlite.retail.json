@@ -1,0 +1,9 @@
+{
+  "name": "Demo Retail (SQLite)",
+  "connector_type": "sqlite",
+  "connection_config": {
+    "file_path": "{{REPO_ROOT}}/sqlite_databases/databases/retail.sqlite"
+  },
+  "is_active": true,
+  "notes": "Run: python sqlite_databases/seed.py --only retail"
+}

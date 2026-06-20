@@ -1,0 +1,8 @@
+{
+  "name": "Demo Inventory (SQLite)",
+  "connector_type": "sqlite",
+  "connection_config": {
+    "file_path": "{{REPO_ROOT}}/sqlite_databases/databases/inventory.sqlite"
+  },
+  "is_active": true
+}

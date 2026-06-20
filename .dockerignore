@@ -1,0 +1,35 @@
+# Dependencies and build artifacts
+node_modules
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# App outputs
+dist
+backend-dist
+release
+instance
+*.db
+sample_data
+test_data
+
+# Desktop packaging
+electron
+desktop
+build
+
+# Git and editor
+.git
+.gitignore
+.cursor
+
+# Local env (mount or pass via compose instead)
+.env
+.env.*
+
+# Tests
+tests

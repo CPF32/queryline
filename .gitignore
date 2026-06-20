@@ -1,0 +1,30 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+node_modules/
+dist/
+backend-dist/
+release/
+build/pyinstaller/
+*.tsbuildinfo
+
+# Local secrets and runtime config (never commit)
+.env
+.env.*
+!.env.example
+docker.env
+*.pem
+*.key
+
+# Local app data (may contain encrypted connector passwords)
+*.db
+integration_admin.db
+text_to_sql_admin.db
+setup.json
+sqlite_databases/databases/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db

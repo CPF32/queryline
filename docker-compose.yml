@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: text-to-sql-analytics:latest
+    ports:
+      - "${APP_PORT:-5001}:5001"
+    environment:
+      APP_DATA_DIR: /data
+      PORT: "5001"
+      AUTH_MODE: ${AUTH_MODE:-trusted_proxy}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/text_to_sql_admin.db}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
+      FERNET_KEY: ${FERNET_KEY:-}
+      SECRET_KEY: ${SECRET_KEY:-}
+      AUTH_ADMIN_USERS: ${AUTH_ADMIN_USERS:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-20250514}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash-lite}
+    volumes:
+      - app-data:/data
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    ports:
+      - "${OLLAMA_HOST_PORT:-11434}:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  app-data:
+  ollama-data:

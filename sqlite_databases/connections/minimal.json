@@ -1,0 +1,8 @@
+{
+  "name": "Demo Minimal (SQLite)",
+  "connector_type": "sqlite",
+  "connection_config": {
+    "file_path": "{{REPO_ROOT}}/sqlite_databases/databases/minimal.sqlite"
+  },
+  "is_active": true
+}

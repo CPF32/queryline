@@ -1,0 +1,20 @@
+[project]
+name = "text-to-sql-analytics"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "cryptography>=42.0",
+    "psycopg2-binary>=2.9",
+    "PyMySQL>=1.1",
+    "pyodbc>=5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

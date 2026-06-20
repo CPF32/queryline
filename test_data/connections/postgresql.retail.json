@@ -1,0 +1,14 @@
+{
+  "name": "Demo Retail (PostgreSQL)",
+  "connector_type": "postgresql",
+  "connection_config": {
+    "host": "localhost",
+    "port": 5433,
+    "database": "retail_demo",
+    "username": "retail_reader",
+    "password": "retail_reader",
+    "ssl_mode": "disable"
+  },
+  "is_active": true,
+  "notes": "Requires: docker compose -f test_data/docker-compose.yml up -d postgres"
+}
