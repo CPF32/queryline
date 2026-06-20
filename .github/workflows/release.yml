@@ -45,6 +45,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Install unixODBC (macOS)
+        if: runner.os == 'macOS'
+        run: brew install unixodbc
+
       - name: Install Node dependencies
         run: npm ci
 

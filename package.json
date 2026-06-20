@@ -3,7 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "description": "Queryline — text-to-SQL analytics desktop app",
-  "author": "Queryline",
+  "author": {
+    "name": "Queryline",
+    "email": "CPF32@users.noreply.github.com"
+  },
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -98,7 +101,8 @@
         "deb"
       ],
       "category": "Development",
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "maintainer": "Queryline <CPF32@users.noreply.github.com>"
     },
     "nsis": {
       "oneClick": false,
