@@ -3,7 +3,8 @@
 from pathlib import Path
 
 block_cipher = None
-root = Path(SPECPATH).resolve().parent.parent
+spec_dir = Path(SPECPATH).resolve()
+root = spec_dir.parent
 
 hiddenimports = [
     "app",
