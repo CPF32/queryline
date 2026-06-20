@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld("desktopApp", {
     return () => ipcRenderer.removeListener("ollama-progress", listener);
   },
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  getAppUpdateStatus: () => ipcRenderer.invoke("get-app-update-status"),
+  checkForAppUpdate: (manual = false) => ipcRenderer.invoke("check-app-update", manual),
   downloadAppUpdate: () => ipcRenderer.invoke("download-app-update"),
   installAppUpdate: () => ipcRenderer.invoke("install-app-update"),
   onAppUpdateStatus: (callback) => {

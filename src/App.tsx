@@ -20,6 +20,7 @@ import SetupGate from "@/setup/SetupGate";
 import SetupWizard from "@/setup/SetupWizard";
 import { SnackbarProvider } from "@/components/snackbar/SnackbarProvider";
 import UpdateBanner from "@/components/UpdateBanner";
+import { AppUpdateProvider } from "@/updates/AppUpdateContext";
 import ThemeSync from "@/theme/ThemeSync";
 
 function ChatShell() {
@@ -70,9 +71,10 @@ export default function App() {
   return (
     <SnackbarProvider>
       <AuthProvider>
-        <ThemeSync />
-        <UpdateBanner />
-        <Routes>
+        <AppUpdateProvider>
+          <ThemeSync />
+          <UpdateBanner />
+          <Routes>
         <Route path="/setup" element={<SetupWizard />} />
         <Route element={<SetupGate />}>
           <Route path="/" element={<ChatShell />} />
@@ -93,6 +95,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </AppUpdateProvider>
       </AuthProvider>
     </SnackbarProvider>
   );

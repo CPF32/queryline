@@ -1,78 +1,46 @@
-import { useEffect, useState } from "react";
-
-type UpdatePhase =
-  | "idle"
-  | "checking"
-  | "available"
-  | "downloading"
-  | "ready"
-  | "error";
-
-interface UpdateStatus {
-  phase: UpdatePhase;
-  version?: string;
-  percent?: number;
-  message?: string;
-}
+import { useAppUpdate } from "@/updates/AppUpdateContext";
 
 export default function UpdateBanner() {
-  const [status, setStatus] = useState<UpdateStatus>({ phase: "idle" });
-  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
-  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
-
-  useEffect(() => {
-    const desktop = window.desktopApp;
-    if (!desktop?.onAppUpdateStatus) {
-      return;
-    }
-
-    void desktop.getAppVersion?.().then((version) => {
-      setCurrentVersion(version);
-    });
-
-    return desktop.onAppUpdateStatus((next) => {
-      setStatus({
-        phase: next.phase as UpdatePhase,
-        version: next.version,
-        percent: next.percent,
-        message: next.message,
-      });
-    });
-  }, []);
-
-  if (!window.desktopApp?.onAppUpdateStatus) {
-    return null;
-  }
+  const {
+    status,
+    currentVersion,
+    dismissedVersion,
+    dismissedError,
+    dismissAvailable,
+    dismissError,
+    downloadUpdate,
+    installUpdate,
+  } = useAppUpdate();
 
   const availableVersion = status.version;
-  const showBanner =
+  const showAvailableBanner =
     (status.phase === "available" || status.phase === "downloading" || status.phase === "ready") &&
     availableVersion &&
     dismissedVersion !== availableVersion;
 
-  if (!showBanner) {
+  const showErrorBanner = status.phase === "error" && !dismissedError;
+
+  if (!showAvailableBanner && !showErrorBanner) {
     return null;
   }
 
-  const handleLater = () => {
-    if (availableVersion) {
-      setDismissedVersion(availableVersion);
-    }
-  };
-
-  const handleUpdate = async () => {
-    const desktop = window.desktopApp;
-    if (!desktop) {
-      return;
-    }
-
-    if (status.phase === "ready") {
-      await desktop.installAppUpdate?.();
-      return;
-    }
-
-    await desktop.downloadAppUpdate?.();
-  };
+  if (showErrorBanner) {
+    return (
+      <div className="update-banner update-banner--error" role="alert">
+        <div className="update-banner__content">
+          <strong className="update-banner__title">Update check failed</strong>
+          <span className="update-banner__message">
+            {status.message ?? "Could not check for updates."}
+          </span>
+        </div>
+        <div className="update-banner__actions">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={dismissError}>
+            Dismiss
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const progressLabel =
     status.phase === "downloading" && typeof status.percent === "number"
@@ -80,6 +48,14 @@ export default function UpdateBanner() {
       : status.phase === "ready"
         ? "Update downloaded — restart to apply"
         : `Version ${availableVersion} is available${currentVersion ? ` (you have ${currentVersion})` : ""}`;
+
+  const handleUpdate = async () => {
+    if (status.phase === "ready") {
+      await installUpdate();
+      return;
+    }
+    await downloadUpdate();
+  };
 
   return (
     <div className="update-banner" role="status" aria-live="polite">
@@ -89,7 +65,7 @@ export default function UpdateBanner() {
       </div>
       <div className="update-banner__actions">
         {status.phase !== "downloading" && status.phase !== "ready" && (
-          <button type="button" className="btn btn--ghost btn--sm" onClick={handleLater}>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={dismissAvailable}>
             Later
           </button>
         )}

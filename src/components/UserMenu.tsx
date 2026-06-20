@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import Icon, { type IconName } from "@/components/icons/Icon";
+import { useAppUpdate } from "@/updates/AppUpdateContext";
 
 function userInitial(user: { display_name?: string; username?: string } | null): string {
   const source = user?.display_name?.trim() || user?.username?.trim() || "?";
@@ -28,6 +29,7 @@ interface UserMenuProps {
 
 export default function UserMenu({ placement = "header", expanded = false }: UserMenuProps) {
   const { user, loading, signedOut, signOut } = useAuth();
+  const { currentVersion } = useAppUpdate();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -94,7 +96,12 @@ export default function UserMenu({ placement = "header", expanded = false }: Use
             className={`user-menu__profile-text${expanded ? "" : " user-menu__profile-text--collapsed"}`}
           >
             <span className="user-menu__profile-name">{user.display_name}</span>
-            <span className="user-menu__profile-role">{userRoleLabel(user.is_admin)}</span>
+            <span className="user-menu__profile-meta">
+              <span className="user-menu__profile-role">{userRoleLabel(user.is_admin)}</span>
+              {currentVersion && (
+                <span className="user-menu__profile-version">v{currentVersion}</span>
+              )}
+            </span>
           </span>
         </button>
 

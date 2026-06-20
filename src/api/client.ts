@@ -66,6 +66,16 @@ declare global {
         callback: (progress: { phase: string; message: string }) => void,
       ) => () => void;
       getAppVersion?: () => Promise<string>;
+      getAppUpdateStatus?: () => Promise<{
+        phase: string;
+        version?: string;
+        currentVersion?: string;
+        percent?: number;
+        message?: string;
+        releaseNotes?: string | null;
+        source?: string;
+      }>;
+      checkForAppUpdate?: (manual?: boolean) => Promise<{ checking: boolean; error?: string }>;
       downloadAppUpdate?: () => Promise<{ started: boolean }>;
       installAppUpdate?: () => Promise<{ installed: boolean }>;
       onAppUpdateStatus?: (

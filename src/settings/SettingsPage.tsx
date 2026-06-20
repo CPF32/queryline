@@ -4,6 +4,7 @@ import Select from "@/components/Select";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/auth/AuthContext";
 import { useSnackbar } from "@/components/snackbar/SnackbarProvider";
+import { useAppUpdate } from "@/updates/AppUpdateContext";
 import { normalizeTheme } from "@/theme/ThemeSync";
 import { useTheme, type Theme } from "@/theme/ThemeProvider";
 
@@ -16,6 +17,14 @@ export default function SettingsPage() {
   const { user, updateUser: setAuthUser } = useAuth();
   const { setTheme } = useTheme();
   const { showSuccess, showError } = useSnackbar();
+  const {
+    currentVersion,
+    isDesktop,
+    status: updateStatus,
+    checkForUpdates,
+    downloadUpdate,
+    installUpdate,
+  } = useAppUpdate();
   const isAdmin = Boolean(user?.is_admin);
   const isOwner = Boolean(user?.is_owner);
   const savedThemeRef = useRef<Theme>("dark");
@@ -25,6 +34,7 @@ export default function SettingsPage() {
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [theme, setThemeDraft] = useState<Theme>("dark");
   const [saving, setSaving] = useState(false);
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
 
   useEffect(() => {
     const savedTheme = normalizeTheme(user?.theme);
@@ -89,6 +99,53 @@ export default function SettingsPage() {
       setSaving(false);
     }
   };
+
+  const handleCheckForUpdates = async () => {
+    setCheckingUpdates(true);
+    try {
+      await checkForUpdates(true);
+    } finally {
+      setCheckingUpdates(false);
+    }
+  };
+
+  const handleApplyUpdate = async () => {
+    if (updateStatus.phase === "ready") {
+      await installUpdate();
+      return;
+    }
+    await downloadUpdate();
+  };
+
+  const updateMessage = (() => {
+    if (updateStatus.phase === "checking" || checkingUpdates) {
+      return "Checking for updates…";
+    }
+    if (updateStatus.phase === "error" && updateStatus.source === "manual") {
+      return updateStatus.message ?? "Could not check for updates.";
+    }
+    if (updateStatus.phase === "available") {
+      return `Version ${updateStatus.version} is available.`;
+    }
+    if (updateStatus.phase === "downloading") {
+      return typeof updateStatus.percent === "number"
+        ? `Downloading… ${Math.round(updateStatus.percent)}%`
+        : "Downloading update…";
+    }
+    if (updateStatus.phase === "ready") {
+      return "Update downloaded — restart to apply.";
+    }
+    if (updateStatus.phase === "up-to-date" && updateStatus.source !== "auto") {
+      return `You're on the latest version${currentVersion ? ` (${currentVersion})` : ""}.`;
+    }
+    if (currentVersion) {
+      return `Installed version ${currentVersion}.`;
+    }
+    if (!isDesktop) {
+      return "Auto-updates are available in the installed desktop app.";
+    }
+    return "Check GitHub Releases for the latest installer.";
+  })();
 
   return (
     <div className="settings-page">
@@ -155,6 +212,43 @@ export default function SettingsPage() {
               </button>
             </div>
           </form>
+        </section>
+
+        <section className="card settings-card settings-card--updates">
+          <div className="settings-card__form">
+            <div className="settings-card__section-header">
+              <h2 className="settings-card__section-title">App updates</h2>
+              <p className="settings-card__section-hint">{updateMessage}</p>
+            </div>
+            <div className="settings-card__footer settings-card__footer--split">
+              {updateStatus.phase === "available" ||
+              updateStatus.phase === "downloading" ||
+              updateStatus.phase === "ready" ? (
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm"
+                  disabled={updateStatus.phase === "downloading"}
+                  onClick={() => void handleApplyUpdate()}
+                >
+                  {updateStatus.phase === "ready"
+                    ? "Restart and update"
+                    : updateStatus.phase === "downloading"
+                      ? "Downloading…"
+                      : "Download update"}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                disabled={checkingUpdates || updateStatus.phase === "checking"}
+                onClick={() => void handleCheckForUpdates()}
+              >
+                {checkingUpdates || updateStatus.phase === "checking"
+                  ? "Checking…"
+                  : "Check for updates"}
+              </button>
+            </div>
+          </div>
         </section>
       </div>
     </div>

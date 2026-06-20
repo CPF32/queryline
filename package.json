@@ -1,7 +1,7 @@
 {
   "name": "text-to-sql-analytics",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Queryline — text-to-SQL analytics desktop app",
   "author": {
     "name": "Queryline",
@@ -60,7 +60,7 @@
       {
         "provider": "github",
         "owner": "CPF32",
-        "repo": "text-to-sql-analytics",
+        "repo": "queryline",
         "releaseType": "release"
       }
     ],
