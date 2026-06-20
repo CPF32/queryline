@@ -8,6 +8,16 @@ root = spec_dir.parent
 
 hiddenimports = [
     "app",
+    "app.adapters",
+    "app.adapters._common",
+    "app.adapters.mssql",
+    "app.adapters.mssql.adapter",
+    "app.adapters.mysql",
+    "app.adapters.mysql.adapter",
+    "app.adapters.postgresql",
+    "app.adapters.postgresql.adapter",
+    "app.adapters.sqlite",
+    "app.adapters.sqlite.adapter",
     "app.api.admin",
     "app.api.admin.data_sources",
     "app.api.admin.examples",
@@ -23,6 +33,7 @@ hiddenimports = [
     "app.clients.gemini_client",
     "app.clients.llm_factory",
     "app.clients.ollama_client",
+    "app.clients.openai_client",
     "app.services.setup_service",
     "flask",
     "flask_sqlalchemy",
@@ -38,6 +49,7 @@ hiddenimports = [
     "sqlglot",
     "anthropic",
     "google.genai",
+    "openai",
     "werkzeug.serving",
 ]
 

@@ -255,7 +255,7 @@ export default function SetupWizard() {
             <h2 className="wizard-panel__title">How should we run the language model?</h2>
             <p className="wizard-panel__subtitle">
               Self-hosting with Ollama keeps data on your machine. You can skip this and pick
-              Anthropic, Gemini, or Ollama later under Admin → LLM settings.
+              Anthropic, OpenAI, Gemini, or Ollama later under Admin → LLM settings.
             </p>
             <div className="setup-wizard__choices">
               <button

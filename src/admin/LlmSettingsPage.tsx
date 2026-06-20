@@ -17,6 +17,11 @@ const PROVIDERS: { id: LlmProvider; label: string; description: string }[] = [
     description: "Cloud API with an API key.",
   },
   {
+    id: "openai",
+    label: "OpenAI (ChatGPT)",
+    description: "Cloud API with an API key.",
+  },
+  {
     id: "gemini",
     label: "Google Gemini",
     description: "Cloud API with an API key.",
@@ -41,6 +46,8 @@ export default function LlmSettingsPage() {
   const [anthropicModel, setAnthropicModel] = useState("");
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [geminiModel, setGeminiModel] = useState("");
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
+  const [openaiModel, setOpenaiModel] = useState("");
   const [ollamaBaseUrl, setOllamaBaseUrl] = useState("http://127.0.0.1:11434");
   const [ollamaModel, setOllamaModel] = useState("llama3.1");
 
@@ -59,10 +66,12 @@ export default function LlmSettingsPage() {
       setProvider(data.provider);
       setAnthropicModel(data.anthropic_model);
       setGeminiModel(data.gemini_model);
+      setOpenaiModel(data.openai_model);
       setOllamaBaseUrl(data.ollama_base_url);
       setOllamaModel(data.ollama_model);
       setAnthropicApiKey("");
       setGeminiApiKey("");
+      setOpenaiApiKey("");
       setSaveStatus("idle");
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load LLM settings");
@@ -83,11 +92,13 @@ export default function LlmSettingsPage() {
       provider,
       anthropic_model: anthropicModel,
       gemini_model: geminiModel,
+      openai_model: openaiModel,
       ollama_base_url: ollamaBaseUrl,
       ollama_model: ollamaModel,
     };
     if (anthropicApiKey) payload.anthropic_api_key = anthropicApiKey;
     if (geminiApiKey) payload.gemini_api_key = geminiApiKey;
+    if (openaiApiKey) payload.openai_api_key = openaiApiKey;
     return payload;
   }, [
     provider,
@@ -95,6 +106,8 @@ export default function LlmSettingsPage() {
     anthropicModel,
     geminiApiKey,
     geminiModel,
+    openaiApiKey,
+    openaiModel,
     ollamaBaseUrl,
     ollamaModel,
   ]);
@@ -106,6 +119,7 @@ export default function LlmSettingsPage() {
       setSettings(updated);
       setAnthropicApiKey("");
       setGeminiApiKey("");
+      setOpenaiApiKey("");
       setSaveStatus("saved");
     } catch (err) {
       setSaveStatus("error");
@@ -133,6 +147,8 @@ export default function LlmSettingsPage() {
     anthropicModel,
     geminiApiKey,
     geminiModel,
+    openaiApiKey,
+    openaiModel,
     ollamaBaseUrl,
     ollamaModel,
     persist,
@@ -285,6 +301,41 @@ export default function LlmSettingsPage() {
               className="form-field__input"
               value={geminiModel}
               onChange={(e) => setGeminiModel(e.target.value)}
+            />
+          </label>
+        </section>
+      )}
+
+      {provider === "openai" && (
+        <section className="card">
+          <h2 className="card__title">OpenAI</h2>
+          <p className="form-field__hint">
+            Create an API key at{" "}
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">
+              platform.openai.com
+            </a>
+            . Models such as <code>gpt-4o</code> and <code>gpt-4o-mini</code> work well for SQL
+            generation.
+          </p>
+          <label className="form-field">
+            <span className="form-field__label">API key</span>
+            <input
+              className="form-field__input"
+              type="password"
+              autoComplete="off"
+              placeholder={
+                settings?.openai_api_key_set ? "Saved — enter to replace" : "sk-…"
+              }
+              value={openaiApiKey}
+              onChange={(e) => setOpenaiApiKey(e.target.value)}
+            />
+          </label>
+          <label className="form-field">
+            <span className="form-field__label">Model</span>
+            <input
+              className="form-field__input"
+              value={openaiModel}
+              onChange={(e) => setOpenaiModel(e.target.value)}
             />
           </label>
         </section>

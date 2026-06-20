@@ -26,7 +26,7 @@ def ensure_adapters_registered() -> None:
 
     for module_name in ("postgresql", "mysql", "mssql"):
         try:
-            __import__(f"app.adapters.{module_name}")
+            __import__(f"app.adapters.{module_name}", fromlist=[module_name])
         except ImportError:
             continue
 

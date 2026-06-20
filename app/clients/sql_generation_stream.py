@@ -13,6 +13,7 @@ from app.clients.claude_client import AnthropicClaudeClient
 from app.clients.gemini_client import GeminiClient
 from app.clients.llm_factory import get_llm_client
 from app.clients.ollama_client import OllamaClient
+from app.clients.openai_client import OpenAIClient
 from app.clients.stream_helpers import ToolJsonAccumulator
 from app.schemas.sql_generation import SQL_GENERATION_TOOL, SqlGenerationToolOutput
 
@@ -201,6 +202,62 @@ def _stream_ollama(
         ) from exc
 
 
+def _stream_openai(
+    client: OpenAIClient,
+    *,
+    system_prompt: str,
+    user_prompt: str,
+) -> Iterator[dict[str, Any]]:
+    if not client._api_key:
+        raise RuntimeError("OPENAI_API_KEY is not configured.")
+
+    from openai import OpenAI
+
+    openai_client = OpenAI(api_key=client._api_key)
+    tool_json = ToolJsonAccumulator()
+
+    try:
+        stream = openai_client.chat.completions.create(
+            model=client._model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            tools=[_ollama_tool_to_payload(SQL_GENERATION_TOOL)],
+            tool_choice={
+                "type": "function",
+                "function": {"name": SQL_GENERATION_TOOL["name"]},
+            },
+            stream=True,
+        )
+
+        for chunk in stream:
+            for call in chunk.choices[0].delta.tool_calls or []:
+                arguments = call.function.arguments if call.function else None
+                if not arguments:
+                    continue
+                explanation_delta = tool_json.add_delta(arguments)
+                if explanation_delta:
+                    yield _explanation_event(explanation_delta)
+
+        if tool_json.raw_json:
+            output = SqlGenerationToolOutput.model_validate(tool_json.parse_complete())
+            yield _complete_event(output)
+            return
+
+        raise RuntimeError(
+            f"OpenAI did not return the expected function call ({SQL_GENERATION_TOOL['name']})."
+        )
+    except Exception as exc:
+        if tool_json.raw_json:
+            output = SqlGenerationToolOutput.model_validate(tool_json.parse_complete())
+            yield _complete_event(output)
+            return
+        from app.clients.openai_client import _friendly_openai_error
+
+        raise _friendly_openai_error(exc) from exc
+
+
 def _stream_gemini(
     client: GeminiClient,
     *,
@@ -233,6 +290,13 @@ def stream_sql_generation(
         return
     if isinstance(client, OllamaClient):
         yield from _stream_ollama(
+            client,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+        return
+    if isinstance(client, OpenAIClient):
+        yield from _stream_openai(
             client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,

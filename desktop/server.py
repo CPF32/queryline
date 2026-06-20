@@ -11,6 +11,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# PyInstaller only bundles modules reachable from this entrypoint. Adapter
+# packages are registered at import time, so import them here for desktop builds.
+import app.adapters.mssql  # noqa: E402, F401
+import app.adapters.mysql  # noqa: E402, F401
+import app.adapters.postgresql  # noqa: E402, F401
+import app.adapters.sqlite  # noqa: E402, F401
+
 
 def _configure_runtime() -> None:
     os.environ.setdefault("DESKTOP_RUNTIME", "1")

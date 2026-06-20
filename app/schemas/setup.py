@@ -9,6 +9,6 @@ from pydantic import BaseModel, Field
 
 class CompleteSetupRequest(BaseModel):
     ollama_self_host: bool
-    provider: Literal["anthropic", "gemini", "ollama"] | None = None
+    provider: Literal["anthropic", "gemini", "openai", "ollama"] | None = None
     ollama_base_url: str | None = None
     ollama_model: str | None = Field(default=None, min_length=1)

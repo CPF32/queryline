@@ -336,16 +336,18 @@ export interface ApiListSuccess<T> {
   meta: ListMeta;
 }
 
-export type LlmProvider = "anthropic" | "gemini" | "ollama";
+export type LlmProvider = "anthropic" | "gemini" | "openai" | "ollama";
 
 export interface LlmSettings {
   provider: LlmProvider;
   anthropic_model: string;
   gemini_model: string;
+  openai_model: string;
   ollama_base_url: string;
   ollama_model: string;
   anthropic_api_key_set: boolean;
   gemini_api_key_set: boolean;
+  openai_api_key_set: boolean;
   configured: boolean;
   env_file_path: string;
 }

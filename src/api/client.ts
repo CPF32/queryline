@@ -876,6 +876,8 @@ export async function updateLlmSettings(body: {
   anthropic_model?: string;
   gemini_api_key?: string;
   gemini_model?: string;
+  openai_api_key?: string;
+  openai_model?: string;
   ollama_base_url?: string;
   ollama_model?: string;
 }): Promise<LlmSettings> {
@@ -891,6 +893,8 @@ export async function testLlmSettings(body: {
   anthropic_model?: string;
   gemini_api_key?: string;
   gemini_model?: string;
+  openai_api_key?: string;
+  openai_model?: string;
   ollama_base_url?: string;
   ollama_model?: string;
 }): Promise<LlmTestResult> {

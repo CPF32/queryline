@@ -18,10 +18,26 @@ Supported LLM backends:
 | Provider | Use case |
 |----------|----------|
 | **Ollama** (local) | On-prem / air-gapped; no API key |
+| **OpenAI** (ChatGPT) | Cloud API |
 | **Anthropic** (Claude) | Cloud API |
 | **Google Gemini** | Cloud API |
 
 ---
+
+## Data source requirements
+
+Use a **read-only** database login for every connection. The app blocks write/DDL SQL at runtime and verifies grants when you save a connection. Step-by-step grant scripts: [docs/READONLY_SETUP.md](docs/READONLY_SETUP.md).
+
+| Engine | What you need | Notes |
+|--------|---------------|-------|
+| **SQLite** | Path to a `.db` / `.sqlite` file on the machine running the app | Opens the file in read-only mode (`mode=ro`, `PRAGMA query_only`). Best for local files and desktop use. On desktop, use the file picker to choose the database. |
+| **PostgreSQL** | Host, port, database, username, password | Server must be reachable from the app. Python driver (`psycopg2`) is bundled in desktop builds. Use SSL (`require` or `verify-full`) over a network. Create a login with `SELECT` only — no `INSERT`, `UPDATE`, `DELETE`, or DDL. |
+| **MySQL / MariaDB** | Host, port, database, username, password | Server must be reachable from the app. Python driver (`PyMySQL`) is bundled in desktop builds. Use SSL when connecting over a network. Grant `SELECT` only on the target schema. |
+| **SQL Server** | Host, port, database, authentication | Server must be reachable from the app. Requires a **system ODBC driver** (for example **ODBC Driver 18 for SQL Server**) installed on the machine running the app — this is separate from the Python package and is not bundled with the desktop installer. Use SQL authentication or Windows/AD auth (`auth_mode: windows`). Map the login to `db_datareader` only. |
+
+**Desktop vs dev:** All four engines appear in the Add Data Source wizard. Packaged desktop builds include the Python drivers for PostgreSQL, MySQL, and SQLite; SQL Server still needs the ODBC driver installed on the OS.
+
+**Docker:** All engines are available in the container image. SQL Server connections from Docker still require network access to your SQL Server host and an ODBC driver inside the container (included in the image).
 
 ## How it works
 
@@ -63,12 +79,27 @@ Supported LLM backends:
 
 Best for individual analysts. The packaged app includes the UI, Python backend, and auto-update from GitHub Releases.
 
+### Unsigned builds (read this first)
+
+**GitHub release installers are not code-signed or notarized.** This project does not ship with Apple Developer ID, Windows Authenticode, or other commercial signing certificates. Your operating system may block or warn about the download — that is expected, not a sign that the file is corrupted.
+
+The app is open source; you can inspect the code and [build from source](#build-from-source) if you prefer. If you trust the project and want to use the pre-built release, follow the install steps below and **allow the app through your OS security prompts**.
+
+| OS | What you may see | How to install anyway |
+|----|------------------|------------------------|
+| **macOS** | “Queryline is damaged and can’t be opened”, or “Apple cannot check it for malicious software” | Download the `.dmg` or `.zip`, open it, then **right-click Queryline → Open** (not double-click) and confirm **Open** in the dialog. If macOS still blocks it: **System Settings → Privacy & Security** → scroll down → **Open Anyway** next to the Queryline message. You only need to do this once per install. |
+| **Windows** | SmartScreen: “Windows protected your PC” / “Unknown publisher” | Click **More info**, then **Run anyway**. For the NSIS installer, accept the UAC prompt when it appears. |
+| **Linux** | AppImage won’t run, or `.deb` install blocked | **AppImage:** `chmod +x Queryline-*.AppImage`, then run it; if your desktop environment asks, allow executing the file. **`.deb`:** install with `sudo dpkg -i Queryline_*.deb` (or use your package manager). |
+
+Auto-updates from GitHub may trigger the same warnings again after a major upgrade; repeat the steps above if needed.
+
 ### Install
 
 1. Download the installer for your OS from [GitHub Releases](https://github.com/CPF32/text-to-sql-analytics/releases/latest).
-2. Run the installer. You'll get **Queryline** in your applications folder with the Queryline icon (not the generic Electron dev icon).
-3. On first launch, a short **setup wizard** asks whether to self-host **Ollama** (optional — you can configure LLM settings later in Admin).
-4. Sign in with your **computer username and password**.
+2. If your browser or OS flags the download, keep the file — see [Unsigned builds](#unsigned-builds-read-this-first) above.
+3. Run the installer (or open the `.dmg` / AppImage). You'll get **Queryline** in your applications folder with the Queryline icon (not the generic Electron dev icon).
+4. On first launch, a short **setup wizard** asks whether to self-host **Ollama** (optional — you can configure LLM settings later in Admin).
+5. Sign in with your **computer username and password**.
 
 The OS user who installs the app becomes the **owner admin** and cannot be demoted.
 
@@ -97,7 +128,7 @@ pip install -r requirements.txt
 npm run desktop:pack
 ```
 
-Installers are written to `release/`. See [DEPLOY.md](DEPLOY.md) for publishing releases and code signing.
+Installers are written to `release/`. Local builds are also unsigned unless you configure signing yourself. See [DEPLOY.md](DEPLOY.md) for publishing releases and optional code signing.
 
 ---
 
@@ -138,6 +169,13 @@ Users listed in `AUTH_ADMIN_USERS` get access to the Admin UI. The Linux user ru
 ### Without Ollama
 
 Use a cloud LLM in `.env`:
+
+```env
+LLM_PROVIDER=openai
+OPENAI_API_KEY=your-key
+```
+
+Or Anthropic / Gemini:
 
 ```env
 LLM_PROVIDER=anthropic
@@ -199,7 +237,7 @@ Further reference: [RUNBOOK.md](RUNBOOK.md), [CONTRACTS.md](CONTRACTS.md)
 
 After sign-in as an admin:
 
-1. **Admin → LLM settings** — choose Ollama, Anthropic, or Gemini and test the connection.
+1. **Admin → LLM settings** — choose Ollama, OpenAI, Anthropic, or Gemini and test the connection.
 2. **Admin → Add data source** — connect a read-only database user.
 3. **Import schema** — select tables/views for the model to use.
 4. Optional: add **glossary terms** and **SQL examples** to improve accuracy.

@@ -12,6 +12,7 @@ from app.api.validation import parse_json
 from app.clients.claude_client import AnthropicClaudeClient
 from app.clients.gemini_client import GeminiClient
 from app.clients.ollama_client import OllamaClient
+from app.clients.openai_client import OpenAIClient
 from app.schemas.llm_settings import TestLlmSettingsRequest, UpdateLlmSettingsRequest
 from app.services.env_settings_service import get_llm_settings, save_llm_settings
 
@@ -33,10 +34,13 @@ def update_llm_settings():
         anthropic_model=body.anthropic_model,
         gemini_api_key=body.gemini_api_key,
         gemini_model=body.gemini_model,
+        openai_api_key=body.openai_api_key,
+        openai_model=body.openai_model,
         ollama_base_url=body.ollama_base_url,
         ollama_model=body.ollama_model,
         update_anthropic_api_key="anthropic_api_key" in payload,
         update_gemini_api_key="gemini_api_key" in payload,
+        update_openai_api_key="openai_api_key" in payload,
     )
     return success_response(settings)
 
@@ -68,6 +72,22 @@ def test_llm_settings():
             result = {
                 "success": True,
                 "message": f"Gemini model '{model}' responded successfully.",
+            }
+        elif provider == "openai":
+            api_key = body.openai_api_key
+            if not api_key and not current["openai_api_key_set"]:
+                raise RuntimeError("OPENAI_API_KEY is not configured.")
+            if not api_key:
+                api_key = os.environ.get("OPENAI_API_KEY", "")
+            model = body.openai_model or current["openai_model"]
+            client = OpenAIClient(api_key=api_key, model=model)
+            client.generate_sql_tool_output(
+                system_prompt="You generate SQL using the submit_sql tool.",
+                user_prompt="Return a trivial SELECT 1 query.",
+            )
+            result = {
+                "success": True,
+                "message": f"OpenAI model '{model}' responded successfully.",
             }
         else:
             api_key = body.anthropic_api_key

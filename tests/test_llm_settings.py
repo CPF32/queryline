@@ -71,6 +71,21 @@ def test_update_replaces_api_key_when_provided(client, env_file):
     assert os.environ["GEMINI_API_KEY"] == "new-gemini-key"
 
 
+def test_update_replaces_openai_api_key_when_provided(client, env_file):
+    client.put(
+        "/api/admin/llm-settings",
+        json={
+            "provider": "openai",
+            "openai_api_key": "new-openai-key",
+            "openai_model": "gpt-4o-mini",
+        },
+    )
+    contents = env_file.read_text(encoding="utf-8")
+    assert "OPENAI_API_KEY" in contents
+    assert "new-openai-key" in contents
+    assert os.environ["OPENAI_API_KEY"] == "new-openai-key"
+
+
 def test_test_ollama_settings_reports_unreachable(client, env_file, monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     response = client.post(

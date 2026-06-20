@@ -1,11 +1,30 @@
 const { app, BrowserWindow, shell, systemPreferences, dialog, ipcMain } = require("electron");
 const path = require("node:path");
 const { startBackend, stopBackend } = require("./backend.cjs");
+const appData = require("./app-data.cjs");
 const ollama = require("./ollama.cjs");
 const { initAutoUpdater, registerUpdaterIpc } = require("./updater.cjs");
 
 /** @type {import("electron").BrowserWindow | null} */
 let mainWindow = null;
+
+async function ensureSelfHostedOllama() {
+  if (!appData.shouldAutoStartOllama()) {
+    return;
+  }
+
+  try {
+    const status = await ollama.ensureOllamaRunning(appData.getOllamaBaseUrl());
+    if (status.running) {
+      console.log(`[ollama] ready at ${status.baseUrl}`);
+    }
+  } catch (error) {
+    console.warn(
+      "[ollama] auto-start failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
 
 async function createWindow() {
   const port = await startBackend();
@@ -108,6 +127,8 @@ if (!gotLock) {
       if (process.platform === "darwin") {
         await systemPreferences.askForMediaAccess("microphone");
       }
+
+      await ensureSelfHostedOllama();
       await createWindow();
     } catch (error) {
       console.error(error);
@@ -118,6 +139,7 @@ if (!gotLock) {
   app.on("activate", async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       try {
+        await ensureSelfHostedOllama();
         await createWindow();
       } catch (error) {
         console.error(error);

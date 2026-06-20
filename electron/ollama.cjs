@@ -186,6 +186,20 @@ async function installOllama(onProgress) {
   throw new Error(`Ollama auto-install is not supported on ${process.platform}.`);
 }
 
+async function ensureOllamaRunning(baseUrl = "http://127.0.0.1:11434") {
+  const status = await getOllamaStatus(baseUrl);
+  if (status.running) {
+    return status;
+  }
+
+  if (!status.installed) {
+    console.warn("[ollama] not installed, skipping auto-start");
+    return status;
+  }
+
+  return startOllama(baseUrl);
+}
+
 async function startOllama(baseUrl = "http://127.0.0.1:11434") {
   const status = await getOllamaStatus(baseUrl);
   if (status.running) {
@@ -278,6 +292,7 @@ module.exports = {
   recommendModel,
   getOllamaStatus,
   installOllama,
+  ensureOllamaRunning,
   startOllama,
   pullModel,
   stopOllamaServe,

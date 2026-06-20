@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-LlmProviderName = Literal["anthropic", "gemini", "ollama"]
+LlmProviderName = Literal["anthropic", "gemini", "openai", "ollama"]
 
 
 class UpdateLlmSettingsRequest(BaseModel):
@@ -15,6 +15,8 @@ class UpdateLlmSettingsRequest(BaseModel):
     anthropic_model: str | None = None
     gemini_api_key: str | None = None
     gemini_model: str | None = None
+    openai_api_key: str | None = None
+    openai_model: str | None = None
     ollama_base_url: str | None = None
     ollama_model: str | None = None
 
@@ -25,6 +27,8 @@ class TestLlmSettingsRequest(BaseModel):
     anthropic_model: str | None = None
     gemini_api_key: str | None = None
     gemini_model: str | None = None
+    openai_api_key: str | None = None
+    openai_model: str | None = None
     ollama_base_url: str | None = None
     ollama_model: str | None = None
 
@@ -33,10 +37,12 @@ class LlmSettingsResponse(BaseModel):
     provider: LlmProviderName
     anthropic_model: str
     gemini_model: str
+    openai_model: str
     ollama_base_url: str
     ollama_model: str
     anthropic_api_key_set: bool
     gemini_api_key_set: bool
+    openai_api_key_set: bool
     configured: bool
     env_file_path: str
 

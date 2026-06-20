@@ -7,6 +7,7 @@ import os
 from app.clients.claude_client import AnthropicClaudeClient, ClaudeClient
 from app.clients.gemini_client import GeminiClient
 from app.clients.ollama_client import OllamaClient
+from app.clients.openai_client import OpenAIClient
 
 
 def get_llm_client() -> ClaudeClient:
@@ -14,12 +15,15 @@ def get_llm_client() -> ClaudeClient:
     provider = os.environ.get("LLM_PROVIDER", "anthropic").strip().lower()
     if provider == "gemini":
         return GeminiClient()
+    if provider == "openai":
+        return OpenAIClient()
     if provider == "anthropic":
         return AnthropicClaudeClient()
     if provider == "ollama":
         return OllamaClient()
     raise RuntimeError(
-        f"Unsupported LLM_PROVIDER '{provider}'. Use 'anthropic', 'gemini', or 'ollama'."
+        f"Unsupported LLM_PROVIDER '{provider}'. "
+        "Use 'anthropic', 'gemini', 'openai', or 'ollama'."
     )
 
 
@@ -28,6 +32,8 @@ def llm_configured() -> bool:
     provider = os.environ.get("LLM_PROVIDER", "anthropic").strip().lower()
     if provider == "gemini":
         return bool(os.environ.get("GEMINI_API_KEY"))
+    if provider == "openai":
+        return bool(os.environ.get("OPENAI_API_KEY"))
     if provider == "ollama":
         return bool(os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").strip())
     return bool(os.environ.get("ANTHROPIC_API_KEY"))
