@@ -22,9 +22,42 @@ Outputs land in `release/`:
 
 | Platform | Artifact |
 |----------|----------|
-| macOS | `.dmg`, `.zip` |
+| macOS | `Queryline-x.y.z.dmg`, `.zip` |
 | Windows | NSIS installer |
 | Linux | `.AppImage`, `.deb` |
+
+The packaged app uses the Queryline icon from `build/icon.png` (1024×1024). Regenerate platform icons with:
+
+```bash
+npm run icons:prepare
+```
+
+### Publish a release (GitHub)
+
+Every patch/minor release is published to GitHub Releases and picked up by installed apps via auto-update.
+
+1. Bump `version` in `package.json` (e.g. `1.0.0` → `1.0.1`)
+2. Commit, tag, and push:
+   ```bash
+   git commit -am "Release v1.0.1"
+   git tag v1.0.1
+   git push origin main --tags
+   ```
+3. GitHub Actions (`.github/workflows/release.yml`) builds macOS, Windows, and Linux installers and attaches them to the release.
+
+Download page for users: `https://github.com/CPF32/text-to-sql-analytics/releases/latest`
+
+Installed apps check GitHub on startup. If a newer version exists, a banner offers **Update** or **Later** (dismissed until the next app launch).
+
+**Code signing** (recommended before wide distribution):
+
+| Platform | Notes |
+|----------|-------|
+| macOS | Apple Developer ID + notarization (`CSC_LINK`, `CSC_KEY_PASSWORD` secrets) |
+| Windows | Authenticode certificate (`CSC_LINK`, `CSC_KEY_PASSWORD`) |
+| Linux | Usually fine unsigned |
+
+Without signing, users may see OS security prompts on first install.
 
 ### What the desktop bundle includes
 

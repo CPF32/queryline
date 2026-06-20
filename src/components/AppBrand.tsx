@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import Icon from "@/components/icons/Icon";
 import { clientTheme } from "@/theme/clientTheme.config";
 
 interface AppBrandProps {
@@ -7,6 +6,7 @@ interface AppBrandProps {
   compact?: boolean;
   collapseText?: boolean;
   textCollapsed?: boolean;
+  markSize?: number;
 }
 
 export default function AppBrand({
@@ -14,8 +14,9 @@ export default function AppBrand({
   compact = false,
   collapseText = false,
   textCollapsed = false,
+  markSize = 32,
 }: AppBrandProps) {
-  const { name, tagline } = clientTheme.brand;
+  const { name, tagline, iconUrl } = clientTheme.brand;
 
   const brandClassName = [
     "app-brand",
@@ -27,8 +28,12 @@ export default function AppBrand({
 
   const content = (
     <>
-      <span className="app-brand__mark" aria-hidden>
-        <Icon name="brand" size={22} />
+      <span
+        className="app-brand__mark"
+        style={{ width: markSize, height: markSize }}
+        aria-hidden
+      >
+        <img className="app-brand__icon" src={iconUrl} alt="" width={markSize} height={markSize} />
       </span>
       {(collapseText || !compact) && (
         <span className="app-brand__text">

@@ -25,6 +25,14 @@ contextBridge.exposeInMainWorld("desktopApp", {
     ipcRenderer.on("ollama-progress", listener);
     return () => ipcRenderer.removeListener("ollama-progress", listener);
   },
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  downloadAppUpdate: () => ipcRenderer.invoke("download-app-update"),
+  installAppUpdate: () => ipcRenderer.invoke("install-app-update"),
+  onAppUpdateStatus: (callback) => {
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on("app-update-status", listener);
+    return () => ipcRenderer.removeListener("app-update-status", listener);
+  },
   versions: {
     node: process.versions.node,
     chrome: process.versions.chrome,

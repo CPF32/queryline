@@ -2,8 +2,8 @@
   "name": "text-to-sql-analytics",
   "private": true,
   "version": "1.0.0",
-  "description": "Text-to-SQL analytics desktop app",
-  "author": "Text-to-SQL Analytics",
+  "description": "Queryline — text-to-SQL analytics desktop app",
+  "author": "Queryline",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -15,8 +15,10 @@
     "preview": "vite preview",
     "desktop:dev": "npm run build && electron .",
     "desktop:backend": "python desktop/build_backend.py",
-    "desktop:pack": "npm run build && npm run desktop:backend && electron-builder",
-    "desktop:pack:dir": "npm run build && npm run desktop:backend && electron-builder --dir",
+    "desktop:pack": "npm run icons:prepare && npm run build && npm run desktop:backend && electron-builder",
+    "desktop:pack:dir": "npm run icons:prepare && npm run build && npm run desktop:backend && electron-builder --dir",
+    "desktop:release": "npm run icons:prepare && npm run build && npm run desktop:backend && electron-builder --publish always",
+    "icons:prepare": "node scripts/prepare-icons.mjs",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:up:ollama": "docker compose --profile ollama up -d --build",
@@ -25,6 +27,7 @@
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.3",
+    "electron-updater": "^6.8.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
@@ -39,16 +42,25 @@
     "@vitejs/plugin-react": "^4.3.3",
     "electron": "^34.5.8",
     "electron-builder": "^25.1.8",
+    "png-to-ico": "^3.0.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
   },
   "build": {
-    "appId": "com.texttosql.analytics",
-    "productName": "Text-to-SQL Analytics",
+    "appId": "com.queryline.app",
+    "productName": "Queryline",
     "directories": {
       "output": "release",
       "buildResources": "build"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CPF32",
+        "repo": "text-to-sql-analytics",
+        "releaseType": "release"
+      }
+    ],
     "files": [
       "electron/**/*",
       "dist/**/*",
@@ -78,7 +90,7 @@
       "target": [
         "nsis"
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.ico"
     },
     "linux": {
       "target": [

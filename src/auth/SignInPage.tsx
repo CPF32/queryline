@@ -40,7 +40,7 @@ export default function SignInPage() {
     <div className="sign-in-page">
       <div className="sign-in-page__card">
         <div className="sign-in-page__brand">
-          <AppBrand to={undefined} />
+          <AppBrand to={undefined} markSize={56} />
         </div>
 
         <form className="sign-in-page__form" onSubmit={handleSubmit}>

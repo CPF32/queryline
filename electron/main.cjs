@@ -2,6 +2,7 @@ const { app, BrowserWindow, shell, systemPreferences, dialog, ipcMain } = requir
 const path = require("node:path");
 const { startBackend, stopBackend } = require("./backend.cjs");
 const ollama = require("./ollama.cjs");
+const { initAutoUpdater, registerUpdaterIpc } = require("./updater.cjs");
 
 /** @type {import("electron").BrowserWindow | null} */
 let mainWindow = null;
@@ -15,7 +16,7 @@ async function createWindow() {
     height: 840,
     minWidth: 960,
     minHeight: 640,
-    title: "Text-to-SQL Analytics",
+    title: "Queryline",
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -50,6 +51,7 @@ async function createWindow() {
   });
 
   await mainWindow.loadURL(backendUrl);
+  initAutoUpdater(mainWindow);
 }
 
 const gotLock = app.requestSingleInstanceLock();
@@ -66,6 +68,8 @@ if (!gotLock) {
   });
 
   app.whenReady().then(async () => {
+    registerUpdaterIpc(ipcMain);
+
     ipcMain.handle("pick-sqlite-file", async () => {
       const result = await dialog.showOpenDialog(mainWindow ?? undefined, {
         title: "Select SQLite database",

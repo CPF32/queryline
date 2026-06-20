@@ -2,7 +2,6 @@ import type { SVGAttributes } from "react";
 import { clientTheme } from "@/theme/clientTheme.config";
 
 export type IconName =
-  | "brand"
   | "sun"
   | "moon"
   | "chat"
@@ -51,50 +50,6 @@ export default function Icon({
   };
 
   switch (name) {
-    case "brand":
-      return (
-        <svg {...shared} viewBox="0 0 24 24">
-          <g transform="translate(0, 2.5)">
-            <path
-              d="M3.5 5.5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 11.5 5.5v4a1.5 1.5 0 0 1-1.5 1.5H7l-1.5 1.5V11H5A1.5 1.5 0 0 1 3.5 9.5v-4Z"
-              stroke="currentColor"
-              strokeWidth={STROKE}
-              strokeLinejoin="round"
-            />
-            <path
-              d="M5.5 7h4M5.5 9h2.5"
-              stroke="currentColor"
-              strokeWidth={STROKE - 0.25}
-              strokeLinecap="round"
-              opacity="0.75"
-            />
-            <path
-              d="M12 8.5h2.5M14.5 8.5l-1-1M14.5 8.5l-1 1"
-              stroke="currentColor"
-              strokeWidth={STROKE}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <circle cx="15.5" cy="8.5" r="0.75" fill="currentColor" />
-            <rect
-              x="16.5"
-              y="5"
-              width="5"
-              height="9"
-              rx="1"
-              stroke="currentColor"
-              strokeWidth={STROKE}
-            />
-            <path
-              d="M16.5 8h5M16.5 10.5h5M19 5v9"
-              stroke="currentColor"
-              strokeWidth={STROKE - 0.35}
-              opacity="0.7"
-            />
-          </g>
-        </svg>
-      );
-
     case "sun":
       return (
         <svg {...shared}>

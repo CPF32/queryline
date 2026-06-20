@@ -65,6 +65,18 @@ declare global {
       onOllamaProgress?: (
         callback: (progress: { phase: string; message: string }) => void,
       ) => () => void;
+      getAppVersion?: () => Promise<string>;
+      downloadAppUpdate?: () => Promise<{ started: boolean }>;
+      installAppUpdate?: () => Promise<{ installed: boolean }>;
+      onAppUpdateStatus?: (
+        callback: (status: {
+          phase: string;
+          version?: string;
+          percent?: number;
+          message?: string;
+          releaseNotes?: string | null;
+        }) => void,
+      ) => () => void;
       versions: {
         node: string;
         chrome: string;

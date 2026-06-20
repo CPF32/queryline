@@ -54,6 +54,8 @@ export interface ClientThemeConfig {
     tagline: string;
     /** Browser tab title */
     documentTitle: string;
+    /** App icon served from /public */
+    iconUrl: string;
   };
   fonts: {
     sans: string;
@@ -89,6 +91,7 @@ export const clientTheme: ClientThemeConfig = {
     name: "Queryline",
     tagline: "Natural Language SQL",
     documentTitle: "Queryline",
+    iconUrl: "/icon.png",
   },
 
   fonts: {

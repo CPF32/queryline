@@ -19,6 +19,7 @@ import { AuthProvider, useAuth } from "@/auth/AuthContext";
 import SetupGate from "@/setup/SetupGate";
 import SetupWizard from "@/setup/SetupWizard";
 import { SnackbarProvider } from "@/components/snackbar/SnackbarProvider";
+import UpdateBanner from "@/components/UpdateBanner";
 import ThemeSync from "@/theme/ThemeSync";
 
 function ChatShell() {
@@ -70,6 +71,7 @@ export default function App() {
     <SnackbarProvider>
       <AuthProvider>
         <ThemeSync />
+        <UpdateBanner />
         <Routes>
         <Route path="/setup" element={<SetupWizard />} />
         <Route element={<SetupGate />}>

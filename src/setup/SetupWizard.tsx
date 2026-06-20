@@ -217,7 +217,7 @@ export default function SetupWizard() {
     <div className="setup-wizard">
       <div className="setup-wizard__card card">
         <header className="setup-wizard__header">
-          <h1 className="setup-wizard__title">Welcome to Text-to-SQL Analytics</h1>
+          <h1 className="setup-wizard__title">Welcome to Queryline</h1>
           <p className="setup-wizard__subtitle">
             A quick setup to get you running. You can change these choices later in Admin settings.
           </p>
