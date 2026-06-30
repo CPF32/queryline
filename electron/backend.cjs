@@ -5,6 +5,18 @@ const path = require("node:path");
 
 const projectRoot = path.join(__dirname, "..");
 
+const INHERITED_LLM_ENV_KEYS = [
+  "LLM_PROVIDER",
+  "ANTHROPIC_API_KEY",
+  "ANTHROPIC_MODEL",
+  "GEMINI_API_KEY",
+  "GEMINI_MODEL",
+  "OPENAI_API_KEY",
+  "OPENAI_MODEL",
+  "OLLAMA_BASE_URL",
+  "OLLAMA_MODEL",
+];
+
 /** @type {import("node:child_process").ChildProcess | null} */
 let backendProcess = null;
 
@@ -72,6 +84,9 @@ function startBackend() {
       // Packaged builds keep an isolated per-user data directory.
       APP_DATA_DIR: app.isPackaged ? app.getPath("userData") : projectRoot,
     };
+    for (const key of INHERITED_LLM_ENV_KEYS) {
+      delete env[key];
+    }
 
     backendProcess = spawn(command, args, {
       env,

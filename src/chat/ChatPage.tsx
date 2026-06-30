@@ -9,7 +9,7 @@ import {
   fetchActiveDataSources,
   fetchChartSpec,
   fetchQueryFeedback,
-  generateSqlStream,
+  generateSqlWithFallback,
   listConversationMessages,
   listConversations,
   updateConversation,
@@ -401,7 +401,7 @@ export default function ChatPage() {
         let thinkingText = "";
         let explanation = "";
 
-        const generated = await generateSqlStream(
+        const generated = await generateSqlWithFallback(
           {
             data_source_id: selectedDataSourceId,
             session_id: sessionId,

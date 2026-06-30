@@ -441,16 +441,26 @@ export async function generateSqlStream(
   payload: GenerateSqlRequest,
   onEvent: (event: SqlStreamEvent) => void,
 ): Promise<GenerateSqlResponse> {
-  const response = await fetch(`${API_BASE}/chat/generate-sql/stream`, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "text/event-stream",
-      ...buildAuthHeaders(),
-    },
-    body: JSON.stringify(payload),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/chat/generate-sql/stream`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...buildAuthHeaders(),
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    throw new ApiRequestError(
+      0,
+      "stream_interrupted",
+      error instanceof Error ? error.message : "Stream interrupted",
+      null,
+    );
+  }
 
   if (!response.ok) {
     const body = await parseJson<ApiError>(response);
@@ -546,6 +556,47 @@ export async function generateSqlStream(
   }
 
   return result;
+}
+
+function isStreamTransportError(error: unknown): boolean {
+  if (error instanceof ApiRequestError) {
+    const code = error.code.toUpperCase();
+    return (
+      code === "STREAM_INTERRUPTED" ||
+      code === "STREAM_FAILED" ||
+      code === "STREAM_INCOMPLETE"
+    );
+  }
+  if (error instanceof Error) {
+    const lower = error.message.toLowerCase();
+    return (
+      lower.includes("network error") ||
+      lower.includes("failed to fetch") ||
+      lower.includes("load failed") ||
+      lower.includes("networkerror") ||
+      lower.includes("aborted")
+    );
+  }
+  return false;
+}
+
+/** Try streaming generation; fall back to a regular POST if the stream drops. */
+export async function generateSqlWithFallback(
+  payload: GenerateSqlRequest,
+  onEvent: (event: SqlStreamEvent) => void,
+): Promise<GenerateSqlResponse> {
+  try {
+    return await generateSqlStream(payload, onEvent);
+  } catch (error) {
+    if (!isStreamTransportError(error)) {
+      throw error;
+    }
+    const result = await generateSql(payload);
+    if (result.explanation) {
+      onEvent({ type: "explanation_delta", delta: result.explanation });
+    }
+    return result;
+  }
 }
 
 export async function executeQuery(
