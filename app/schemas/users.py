@@ -10,6 +10,7 @@ class CreateUserRequest(BaseModel):
     domain: str | None = Field(default=None, max_length=255)
     display_name: str = Field(min_length=1, max_length=255)
     is_admin: bool = False
+    is_developer: bool = False
 
 
 class UpdateUserRequest(BaseModel):
@@ -17,4 +18,5 @@ class UpdateUserRequest(BaseModel):
     domain: str | None = Field(default=None, max_length=255)
     display_name: str | None = Field(default=None, min_length=1, max_length=255)
     is_admin: bool | None = None
+    is_developer: bool | None = None
     theme: Literal["light", "dark"] | None = None

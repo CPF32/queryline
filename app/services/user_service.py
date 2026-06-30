@@ -13,12 +13,14 @@ from app.util.time import utc_now_iso
 
 def _user_from_row(row: UserRow) -> User:
     is_owner = setup_service.is_owner_user(username=row.username, domain=row.domain)
+    is_developer = row.is_developer or is_owner
     return User(
         id=row.id,
         username=row.username,
         domain=row.domain,
         display_name=row.display_name,
-        is_admin=row.is_admin or is_owner,
+        is_admin=row.is_admin or is_owner or is_developer,
+        is_developer=is_developer,
         is_owner=is_owner,
         theme=row.theme if row.theme in ("light", "dark") else "dark",
         created_at=row.created_at,
@@ -88,6 +90,7 @@ def create_user(
     domain: str | None,
     display_name: str,
     is_admin: bool = False,
+    is_developer: bool = False,
 ) -> User:
     cleaned_username = username.strip()
     cleaned_display = display_name.strip()
@@ -101,7 +104,8 @@ def create_user(
         username=cleaned_username,
         domain=domain.strip() if domain else None,
         display_name=cleaned_display,
-        is_admin=is_admin,
+        is_admin=is_admin or is_developer,
+        is_developer=is_developer,
         created_at=now,
         last_seen_at=now,
     )
@@ -152,6 +156,19 @@ def update_user(user_id: str, data: dict[str, object]) -> User:
                 "The machine owner account cannot be demoted to a regular user."
             )
         row.is_admin = next_admin
+
+    if "is_developer" in data:
+        next_developer = bool(data["is_developer"])
+        if (
+            setup_service.is_owner_user(username=row.username, domain=row.domain)
+            and not next_developer
+        ):
+            raise ValidationAppError(
+                "The machine owner account cannot be demoted from developer access."
+            )
+        row.is_developer = next_developer
+        if next_developer:
+            row.is_admin = True
 
     if "theme" in data:
         theme = str(data["theme"])

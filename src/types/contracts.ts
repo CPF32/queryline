@@ -229,10 +229,21 @@ export interface User {
   domain: string | null;
   display_name: string;
   is_admin: boolean;
+  is_developer: boolean;
   is_owner: boolean;
   theme: "light" | "dark";
   created_at: string;
   last_seen_at: string;
+}
+
+export interface DiagnosticLogEntry {
+  id: string;
+  level: "error" | "warning" | "info";
+  source: string;
+  message: string;
+  details: Record<string, unknown> | null;
+  user_id: string | null;
+  created_at: string;
 }
 
 export interface SetupStatus {

@@ -134,3 +134,10 @@ def require_admin() -> User:
     if not user.is_admin:
         raise UnauthorizedError("Administrator access required.")
     return user
+
+
+def require_developer() -> User:
+    user = require_admin()
+    if not user.is_developer:
+        raise UnauthorizedError("Developer access required.")
+    return user

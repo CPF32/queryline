@@ -1614,6 +1614,27 @@ a.btn.btn--primary:hover:not(:disabled) {
   border: 1px solid var(--danger-border);
 }
 
+.diagnostic-log__message {
+  max-width: 28rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diagnostic-log__details-row td {
+  background: var(--surface-elevated);
+}
+
+.diagnostic-log__details {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow: auto;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .badge--muted {
   background: var(--surface-hover);
   color: var(--text-secondary);

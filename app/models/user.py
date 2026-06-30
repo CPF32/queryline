@@ -13,6 +13,7 @@ class User(BaseModel):
     domain: str | None = None
     display_name: str
     is_admin: bool = False
+    is_developer: bool = False
     is_owner: bool = False
     theme: ThemePreference = "dark"
     created_at: str

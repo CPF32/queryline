@@ -11,12 +11,14 @@ from pydantic import ValidationError
 
 from app.api.admin import (
     admin_data_sources_bp,
+    admin_diagnostic_logs_bp,
     admin_examples_bp,
     admin_glossary_bp,
     admin_llm_settings_bp,
     admin_query_log_bp,
     admin_schema_bp,
 )
+from app.api.admin.diagnostic_logs import diagnostic_events_bp
 from app.api.auth import auth_bp
 from app.api.setup import setup_bp
 from app.api.chat import chat_bp
@@ -24,7 +26,7 @@ from app.api.conversations import conversations_bp
 from app.api.feedback import feedback_bp
 from app.api.users import users_bp
 from app.api.responses import error_response
-from app.auth.context import init_auth, require_admin, require_user
+from app.auth.context import init_auth, require_admin, require_developer, require_user
 from app.db import init_db
 from app.errors import AppError
 from app.paths import get_default_database_url
@@ -46,11 +48,18 @@ _ADMIN_RESOURCE_MARKERS = (
     "/query-log",
     "/connectors",
     "/users",
+    "/diagnostic-logs",
 )
+
+_DEVELOPER_RESOURCE_MARKERS = ("/diagnostic-logs",)
 
 
 def _is_admin_read_path(path: str) -> bool:
     return any(marker in path for marker in _ADMIN_RESOURCE_MARKERS)
+
+
+def _is_developer_path(path: str) -> bool:
+    return any(marker in path for marker in _DEVELOPER_RESOURCE_MARKERS)
 
 
 def _is_admin_write_path(path: str) -> bool:
@@ -93,6 +102,11 @@ def _register_api_blueprints(app: Flask, prefix: str, *, name_suffix: str = "") 
         url_prefix=prefix,
         name=f"admin_llm_settings{suffix}",
     )
+    app.register_blueprint(
+        admin_diagnostic_logs_bp,
+        url_prefix=prefix,
+        name=f"admin_diagnostic_logs{suffix}",
+    )
     app.register_blueprint(chat_bp, url_prefix=prefix, name=f"chat{suffix}")
     app.register_blueprint(auth_bp, url_prefix=prefix, name=f"auth{suffix}")
     app.register_blueprint(
@@ -103,6 +117,12 @@ def _register_api_blueprints(app: Flask, prefix: str, *, name_suffix: str = "") 
     app.register_blueprint(feedback_bp, url_prefix=prefix, name=f"feedback{suffix}")
     app.register_blueprint(users_bp, url_prefix=prefix, name=f"users{suffix}")
     app.register_blueprint(setup_bp, url_prefix=prefix, name=f"setup{suffix}")
+    if not name_suffix:
+        app.register_blueprint(
+            diagnostic_events_bp,
+            url_prefix=prefix,
+            name="diagnostic_events",
+        )
 
 
 def create_app(config: dict | None = None) -> Flask:
@@ -154,10 +174,14 @@ def create_app(config: dict | None = None) -> Flask:
 
         if path.startswith("/api/admin"):
             require_admin()
+            if _is_developer_path(path):
+                require_developer()
             return
 
         if _is_admin_read_path(path):
             require_admin()
+            if _is_developer_path(path):
+                require_developer()
             return
 
         if method not in ("GET", "HEAD", "OPTIONS") and _is_admin_write_path(path):
@@ -184,6 +208,25 @@ def create_app(config: dict | None = None) -> Flask:
 
     @app.errorhandler(AppError)
     def handle_app_error(exc: AppError):
+        if exc.status_code >= 500 or exc.code in {
+            "sql_generation_failed",
+            "connection_failed",
+            "internal_error",
+        }:
+            from app.auth.context import get_current_user
+            from app.services import diagnostic_log_service
+
+            user = get_current_user()
+            diagnostic_log_service.log_error(
+                "api",
+                exc.message,
+                details={
+                    "code": exc.code,
+                    "status_code": exc.status_code,
+                    "details": exc.details,
+                },
+                user_id=user.id if user else None,
+            )
         return error_response(
             exc.code,
             exc.message,
@@ -205,7 +248,17 @@ def create_app(config: dict | None = None) -> Flask:
         return error_response("not_found", "Resource not found.", status=404, details=None)
 
     @app.errorhandler(500)
-    def handle_internal_error(_exc):
+    def handle_internal_error(exc):
+        from app.auth.context import get_current_user
+        from app.services import diagnostic_log_service
+
+        user = get_current_user()
+        diagnostic_log_service.log_error(
+            "api",
+            "Unhandled server error.",
+            exc=exc,
+            user_id=user.id if user else None,
+        )
         return error_response(
             "internal_error",
             "An unexpected error occurred.",

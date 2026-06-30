@@ -30,6 +30,7 @@ from app.schemas.chat_requests import (
 )
 from app.services import (
     chart_spec_service,
+    diagnostic_log_service,
     query_execution_service,
     speech_transcription_service,
     sql_generation_service,
@@ -41,7 +42,7 @@ _MAX_TRANSCRIBE_BYTES = 10 * 1024 * 1024
 
 @chat_bp.post("/chat/generate-sql")
 def generate_sql():
-    require_user()
+    user = require_user()
     body = parse_json(request, GenerateSqlRequest)
     history = [message.model_dump() for message in body.conversation_history]
     result = sql_generation_service.generate_sql(
@@ -51,6 +52,17 @@ def generate_sql():
         retry_context=body.retry_context,
     )
     if not result.success:
+        diagnostic_log_service.log_error(
+            "chat.generate_sql",
+            result.error_message or result.explanation,
+            details={
+                "explanation": result.explanation,
+                "attempt_number": result.attempt_number,
+                "matched_glossary_terms": result.matched_glossary_terms,
+                "data_source_id": body.data_source_id,
+            },
+            user_id=user.id,
+        )
         return error_response(
             "sql_generation_failed",
             result.error_message or result.explanation,
@@ -75,7 +87,7 @@ def generate_sql():
 
 @chat_bp.post("/chat/generate-sql/stream")
 def generate_sql_stream():
-    require_user()
+    user = require_user()
     body = parse_json(request, GenerateSqlRequest)
     history = [message.model_dump() for message in body.conversation_history]
 
@@ -89,8 +101,26 @@ def generate_sql_stream():
                 conversation_history=history,
                 retry_context=body.retry_context,
             ):
+                if event.get("type") == "error":
+                    diagnostic_log_service.log_error(
+                        "chat.stream",
+                        str(event.get("message", "SQL generation failed")),
+                        details={
+                            **(event.get("details") or {}),
+                            "code": event.get("code"),
+                            "data_source_id": body.data_source_id,
+                        },
+                        user_id=user.id,
+                    )
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as exc:
+            diagnostic_log_service.log_error(
+                "chat.stream",
+                str(exc),
+                exc=exc,
+                details={"data_source_id": body.data_source_id},
+                user_id=user.id,
+            )
             payload = {
                 "type": "error",
                 "code": "sql_generation_failed",

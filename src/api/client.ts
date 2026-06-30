@@ -18,6 +18,7 @@ import type {
   GlossaryTerm,
   QueryFeedback,
   QueryLogEntry,
+  DiagnosticLogEntry,
   SchemaColumn,
   SchemaImportResult,
   SchemaObjectType,
@@ -273,6 +274,7 @@ export async function createUser(body: {
   domain?: string | null;
   display_name: string;
   is_admin?: boolean;
+  is_developer?: boolean;
 }): Promise<User> {
   return unwrapData("/users", {
     method: "POST",
@@ -287,6 +289,7 @@ export async function updateUser(
     domain?: string | null;
     display_name?: string;
     is_admin?: boolean;
+    is_developer?: boolean;
     theme?: "light" | "dark";
   },
 ): Promise<User> {
@@ -985,6 +988,37 @@ export async function testLlmSettings(body: {
   ollama_model?: string;
 }): Promise<LlmTestResult> {
   return unwrapData("/llm-settings/test", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+// --- Diagnostic logs (developer only) ---
+
+export async function listDiagnosticLogs(
+  params: { limit?: number; offset?: number; level?: string; source?: string } = {},
+): Promise<ApiListSuccess<DiagnosticLogEntry>> {
+  const search = new URLSearchParams();
+  if (params.limit !== undefined) search.set("limit", String(params.limit));
+  if (params.offset !== undefined) search.set("offset", String(params.offset));
+  if (params.level) search.set("level", params.level);
+  if (params.source) search.set("source", params.source);
+  const query = search.toString();
+  const suffix = query ? `?${query}` : "";
+  return request<ApiListSuccess<DiagnosticLogEntry>>(`/diagnostic-logs${suffix}`);
+}
+
+export async function clearDiagnosticLogs(): Promise<{ deleted: number }> {
+  return unwrapData("/diagnostic-logs", { method: "DELETE" });
+}
+
+export async function logDiagnosticEvent(body: {
+  level?: "error" | "warning" | "info";
+  source: string;
+  message: string;
+  details?: Record<string, unknown> | null;
+}): Promise<void> {
+  await request("/diagnostic-events", {
     method: "POST",
     body: JSON.stringify(body),
   });

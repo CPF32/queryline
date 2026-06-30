@@ -9,8 +9,9 @@ function userInitial(user: { display_name?: string; username?: string } | null):
   return source.charAt(0).toUpperCase();
 }
 
-function userRoleLabel(isAdmin: boolean): string {
-  return isAdmin ? "Administrator" : "User";
+function userRoleLabel(user: { is_admin?: boolean; is_developer?: boolean } | null): string {
+  if (user?.is_developer) return "Developer";
+  return user?.is_admin ? "Administrator" : "User";
 }
 
 function MenuItemContent({ icon, label }: { icon: IconName; label: string }) {
@@ -97,7 +98,7 @@ export default function UserMenu({ placement = "header", expanded = false }: Use
           >
             <span className="user-menu__profile-name">{user.display_name}</span>
             <span className="user-menu__profile-meta">
-              <span className="user-menu__profile-role">{userRoleLabel(user.is_admin)}</span>
+              <span className="user-menu__profile-role">{userRoleLabel(user)}</span>
               {currentVersion && (
                 <span className="user-menu__profile-version">v{currentVersion}</span>
               )}

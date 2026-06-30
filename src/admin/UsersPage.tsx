@@ -12,7 +12,22 @@ import type { User } from "@/types/contracts";
 const ROLE_OPTIONS = [
   { value: "user", label: "User" },
   { value: "admin", label: "Administrator" },
+  { value: "developer", label: "Developer" },
 ];
+
+function roleFlags(role: string): { is_admin: boolean; is_developer: boolean } {
+  return {
+    is_admin: role === "admin" || role === "developer",
+    is_developer: role === "developer",
+  };
+}
+
+function roleLabel(user: User): string {
+  if (user.is_owner) return "Owner";
+  if (user.is_developer) return "Developer";
+  if (user.is_admin) return "Admin";
+  return "User";
+}
 
 function formatIdentity(user: User): string {
   return user.domain ? `${user.domain}\\${user.username}` : user.username;
@@ -53,7 +68,7 @@ export default function UsersPage() {
       const created = await createUser({
         username: username.trim(),
         display_name: displayName.trim(),
-        is_admin: role === "admin",
+        ...roleFlags(role),
       });
       setUsers((current) =>
         [...current, created].sort((a, b) =>
@@ -68,6 +83,21 @@ export default function UsersPage() {
       showError(err instanceof Error ? err.message : "Failed to create user");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleToggleDeveloper = async (user: User) => {
+    if (user.is_owner) {
+      showError("The machine owner always has developer access.");
+      return;
+    }
+    try {
+      const updated = await updateUser(user.id, { is_developer: !user.is_developer });
+      setUsers((current) =>
+        current.map((item) => (item.id === user.id ? updated : item)),
+      );
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Failed to update user");
     }
   };
 
@@ -106,7 +136,7 @@ export default function UsersPage() {
     <div className="page page--users">
       <PageHeader
         title="Users & roles"
-        description="Provision users before their first sign-in and assign administrator access."
+        description="Provision users before their first sign-in. Developers are administrators with access to diagnostic logs."
       />
 
       <section className="card settings-section users-add-section">
@@ -174,8 +204,12 @@ export default function UsersPage() {
                     <td>{user.display_name}</td>
                     <td>{formatIdentity(user)}</td>
                     <td>
-                      <span className={`badge ${user.is_admin ? "badge--success" : "badge--muted"}`}>
-                        {user.is_owner ? "Owner" : user.is_admin ? "Admin" : "User"}
+                      <span
+                        className={`badge ${
+                          user.is_admin || user.is_developer ? "badge--success" : "badge--muted"
+                        }`}
+                      >
+                        {roleLabel(user)}
                       </span>
                     </td>
                     <td className="query-log-table__time">
@@ -183,6 +217,15 @@ export default function UsersPage() {
                     </td>
                     <td>
                       <div className="btn-group">
+                        {!user.is_owner && (
+                          <button
+                            type="button"
+                            className="btn btn--secondary btn--sm"
+                            onClick={() => void handleToggleDeveloper(user)}
+                          >
+                            {user.is_developer ? "Revoke developer" : "Make developer"}
+                          </button>
+                        )}
                         {!user.is_owner && (
                           <button
                             type="button"

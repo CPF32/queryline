@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "@/auth/AuthContext";
 
 const ADMIN_NAV_ITEMS = [
   { to: "/admin", label: "Data sources", end: true },
@@ -7,9 +8,17 @@ const ADMIN_NAV_ITEMS = [
 ] as const;
 
 export default function AdminNav() {
+  const { user } = useAuth();
+  const items = user?.is_developer
+    ? [
+        ...ADMIN_NAV_ITEMS,
+        { to: "/admin/diagnostic-logs", label: "Diagnostics", end: false },
+      ]
+    : [...ADMIN_NAV_ITEMS];
+
   return (
     <nav className="admin-nav" aria-label="Admin sections">
-      {ADMIN_NAV_ITEMS.map(({ to, label, end }) => (
+      {items.map(({ to, label, end }) => (
         <NavLink
           key={to}
           to={to}

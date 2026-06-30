@@ -138,9 +138,22 @@ class UserRow(db.Model):
     domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_developer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     theme: Mapped[str] = mapped_column(String(16), nullable=False, default="dark")
     created_at: Mapped[str] = mapped_column(String(32), nullable=False)
     last_seen_at: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
+class DiagnosticLogRow(db.Model):
+    __tablename__ = "diagnostic_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    level: Mapped[str] = mapped_column(String(16), nullable=False, default="error")
+    source: Mapped[str] = mapped_column(String(64), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    user_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    created_at: Mapped[str] = mapped_column(String(32), nullable=False)
 
 
 class ConversationRow(db.Model):
@@ -232,10 +245,17 @@ def _ensure_optional_columns() -> None:
 
     if "users" in inspector.get_table_names():
         columns = {column["name"] for column in inspector.get_columns("users")}
-        if "theme" not in columns:
-            with engine.begin() as connection:
+        with engine.begin() as connection:
+            if "theme" not in columns:
                 connection.execute(
                     text("ALTER TABLE users ADD COLUMN theme VARCHAR(16) DEFAULT 'dark'")
+                )
+            if "is_developer" not in columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE users ADD COLUMN is_developer BOOLEAN "
+                        "DEFAULT 0 NOT NULL"
+                    )
                 )
 
 

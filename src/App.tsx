@@ -11,6 +11,8 @@ import QueryLogPage from "@/admin/QueryLogPage";
 import LlmSettingsPage from "@/admin/LlmSettingsPage";
 import SchemaEditorPage from "@/admin/SchemaEditorPage";
 import UsersPage from "@/admin/UsersPage";
+import DiagnosticLogsPage from "@/admin/DiagnosticLogsPage";
+import DeveloperRoute from "@/admin/DeveloperRoute";
 import { DataSourceProvider } from "@/admin/DataSourceContext";
 import SettingsPage from "@/settings/SettingsPage";
 import ChatPage from "@/chat/ChatPage";
@@ -83,6 +85,14 @@ export default function App() {
             <Route index element={<DataSourcesPage />} />
             <Route path="llm-settings" element={<LlmSettingsPage />} />
             <Route path="users" element={<UsersPage />} />
+            <Route
+              path="diagnostic-logs"
+              element={
+                <DeveloperRoute>
+                  <DiagnosticLogsPage />
+                </DeveloperRoute>
+              }
+            />
             <Route path="data-sources/new" element={<AddDataSourceWizard />} />
             <Route path="data-sources/:dataSourceId" element={<DataSourceScopedLayout />}>
               <Route path="schema/import" element={<ImportSchemaFlow />} />

@@ -12,6 +12,7 @@ import {
   generateSqlWithFallback,
   listConversationMessages,
   listConversations,
+  logDiagnosticEvent,
   updateConversation,
 } from "@/api/client";
 import ChatComposer from "@/chat/ChatComposer";
@@ -506,6 +507,19 @@ export default function ChatPage() {
         updateAssistantMessage(assistantId, assistantToPersist);
       } catch (error) {
         const chatError = mapApiErrorToChatError(error);
+        void logDiagnosticEvent({
+          source: "chat",
+          message: chatError.message,
+          details: {
+            kind: chatError.kind,
+            title: chatError.title,
+            suggestion: chatError.suggestion,
+            underlying:
+              error instanceof Error
+                ? { name: error.name, message: error.message, stack: error.stack }
+                : String(error),
+          },
+        }).catch(() => undefined);
         assistantToPersist = {
           ...assistantMessage,
           stage: "error",

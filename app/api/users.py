@@ -36,6 +36,7 @@ def create_user():
         domain=body.domain,
         display_name=body.display_name,
         is_admin=body.is_admin,
+        is_developer=body.is_developer,
     )
     return success_response(user.to_dict(), status=201)
 
