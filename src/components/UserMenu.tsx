@@ -69,7 +69,17 @@ export default function UserMenu({ placement = "header", expanded = false }: Use
         </div>
       );
     }
-    return <div className="user-menu__avatar user-menu__avatar--loading" aria-hidden />;
+    return (
+      <div className="user-menu user-menu--header" aria-hidden>
+        <div className="user-menu__profile user-menu__profile--header user-menu__profile--loading">
+          <span className="user-menu__avatar user-menu__avatar--inline user-menu__avatar--loading" />
+          <span className="user-menu__profile-text user-menu__profile-text--header">
+            <span className="user-menu__profile-name">&nbsp;</span>
+            <span className="user-menu__profile-role">&nbsp;</span>
+          </span>
+        </div>
+      </div>
+    );
   }
 
   if (signedOut || !user) {
@@ -82,29 +92,29 @@ export default function UserMenu({ placement = "header", expanded = false }: Use
         className={`user-menu user-menu--sidebar${expanded ? " user-menu--expanded" : ""}`}
         ref={rootRef}
       >
-        <button
-          type="button"
-          className="user-menu__profile"
-          onClick={() => setOpen((current) => !current)}
-          aria-expanded={open}
-          aria-haspopup="menu"
-          title={expanded ? undefined : user.display_name}
-        >
-          <span className="user-menu__avatar user-menu__avatar--inline" aria-hidden>
-            {userInitial(user)}
-          </span>
-          <span
-            className={`user-menu__profile-text${expanded ? "" : " user-menu__profile-text--collapsed"}`}
+        <div className="user-menu__sidebar-footer">
+          <button
+            type="button"
+            className="user-menu__profile"
+            onClick={() => setOpen((current) => !current)}
+            aria-expanded={open}
+            aria-haspopup="menu"
+            title={expanded ? undefined : user.display_name}
           >
-            <span className="user-menu__profile-name">{user.display_name}</span>
-            <span className="user-menu__profile-meta">
-              <span className="user-menu__profile-role">{userRoleLabel(user)}</span>
-              {currentVersion && (
-                <span className="user-menu__profile-version">v{currentVersion}</span>
-              )}
+            <span className="user-menu__avatar user-menu__avatar--inline" aria-hidden>
+              {userInitial(user)}
             </span>
-          </span>
-        </button>
+            <span
+              className={`user-menu__profile-text${expanded ? "" : " user-menu__profile-text--collapsed"}`}
+            >
+              <span className="user-menu__profile-name">{user.display_name}</span>
+              <span className="user-menu__profile-role">{userRoleLabel(user)}</span>
+            </span>
+          </button>
+          {expanded && currentVersion && (
+            <span className="user-menu__section-version">v{currentVersion}</span>
+          )}
+        </div>
 
         {open && (
           <div
@@ -179,22 +189,34 @@ export default function UserMenu({ placement = "header", expanded = false }: Use
   }
 
   return (
-    <div className="user-menu" ref={rootRef}>
+    <div className="user-menu user-menu--header" ref={rootRef}>
       <button
         type="button"
-        className="user-menu__avatar"
+        className="user-menu__profile user-menu__profile--header"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
         aria-haspopup="menu"
         title={user.display_name}
       >
-        {userInitial(user)}
+        <span className="user-menu__avatar user-menu__avatar--inline" aria-hidden>
+          {userInitial(user)}
+        </span>
+        <span className="user-menu__profile-text user-menu__profile-text--header">
+          <span className="user-menu__profile-name">{user.display_name}</span>
+          <span className="user-menu__profile-role">{userRoleLabel(user)}</span>
+          {currentVersion && (
+            <span className="user-menu__section-version">v{currentVersion}</span>
+          )}
+        </span>
       </button>
 
       {open && (
         <div className="user-menu__dropdown" role="menu">
           <div className="user-menu__identity">
             <span className="user-menu__name">{user.display_name}</span>
+            <span className="user-menu__meta">
+              {userRoleLabel(user)}
+            </span>
             <span className="user-menu__meta">
               {user.domain ? `${user.domain}\\${user.username}` : user.username}
             </span>

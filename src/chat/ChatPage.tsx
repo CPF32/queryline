@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   appendConversationMessage,
@@ -154,6 +154,7 @@ export default function ChatPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyView, setHistoryView] = useState<HistoryView>("active");
   const sessionId = useMemo(() => getOrCreateSessionId(), []);
+  const hasRestoredConversation = useRef(false);
   const selectedDataSource = useMemo(
     () => dataSources.find((source) => source.id === selectedDataSourceId),
     [dataSources, selectedDataSourceId],
@@ -245,12 +246,16 @@ export default function ChatPage() {
   }, [activeConversationId]);
 
   useEffect(() => {
+    if (hasRestoredConversation.current) {
+      return;
+    }
+    hasRestoredConversation.current = true;
     const savedConversationId = sessionStorage.getItem(ACTIVE_CONVERSATION_KEY);
-    if (!savedConversationId || activeConversationId || messages.length > 0) {
+    if (!savedConversationId) {
       return;
     }
     void loadConversation(savedConversationId);
-  }, [activeConversationId, loadConversation, messages.length]);
+  }, [loadConversation]);
 
   useEffect(() => {
     if (activeConversationId) {
@@ -308,6 +313,7 @@ export default function ChatPage() {
     if (isSubmitting) {
       return;
     }
+    sessionStorage.removeItem(ACTIVE_CONVERSATION_KEY);
     setActiveConversationId(null);
     setMessages([]);
     setInput("");

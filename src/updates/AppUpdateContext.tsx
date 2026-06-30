@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { isDesktopApp } from "@/api/client";
+import { APP_VERSION } from "@/appVersion";
 
 export type UpdatePhase =
   | "idle"
@@ -67,7 +68,7 @@ function getDesktopBridge() {
 export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const isDesktop = isDesktopApp();
   const [status, setStatus] = useState<AppUpdateStatus>({ phase: "idle" });
-  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [currentVersion, setCurrentVersion] = useState<string | null>(APP_VERSION);
   const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
   const [dismissedError, setDismissedError] = useState(false);
 
@@ -78,7 +79,9 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
     }
 
     void desktop.getAppVersion?.().then((version) => {
-      setCurrentVersion(version);
+      if (version) {
+        setCurrentVersion(version);
+      }
     });
 
     void desktop.getAppUpdateStatus?.().then((raw) => {
