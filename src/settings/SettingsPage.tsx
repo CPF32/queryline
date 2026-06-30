@@ -142,9 +142,9 @@ export default function SettingsPage() {
       return `Installed version ${currentVersion}.`;
     }
     if (!isDesktop) {
-      return "Auto-updates are available in the installed desktop app.";
+      return "You are in browser mode. Open the Queryline desktop app (not a browser tab) to check for updates here.";
     }
-    return "Check GitHub Releases for the latest installer.";
+    return "Updates are checked against GitHub Releases.";
   })();
 
   return (

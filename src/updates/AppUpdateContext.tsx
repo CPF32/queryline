@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { isDesktopApp } from "@/api/client";
 
 export type UpdatePhase =
   | "idle"
@@ -54,15 +55,19 @@ function normalizeStatus(raw: Record<string, unknown>): AppUpdateStatus {
   };
 }
 
+function getDesktopBridge() {
+  return window.desktopApp;
+}
+
 export function AppUpdateProvider({ children }: { children: ReactNode }) {
-  const desktop = window.desktopApp;
-  const isDesktop = Boolean(desktop?.onAppUpdateStatus);
+  const isDesktop = isDesktopApp();
   const [status, setStatus] = useState<AppUpdateStatus>({ phase: "idle" });
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
   const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
   const [dismissedError, setDismissedError] = useState(false);
 
   useEffect(() => {
+    const desktop = getDesktopBridge();
     if (!desktop?.onAppUpdateStatus) {
       return;
     }
@@ -93,33 +98,52 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
     void desktop.checkForAppUpdate?.(false);
 
     return unsubscribe;
-  }, [desktop]);
+  }, [isDesktop]);
 
   const checkForUpdates = useCallback(
     async (manual = true) => {
+      const desktop = getDesktopBridge();
       if (!desktop?.checkForAppUpdate) {
         setStatus({
           phase: "error",
           source: "manual",
-          message: "Updates are only available in the installed desktop app.",
+          message:
+            "Auto-updates require the Queryline desktop application window. " +
+            "If you opened Queryline in Chrome, Edge, or Safari, close that tab and " +
+            "launch Queryline from your Applications folder or Start menu instead.",
         });
         setDismissedError(false);
         return;
       }
 
       setDismissedError(false);
-      await desktop.checkForAppUpdate(manual);
+      const result = await desktop.checkForAppUpdate(manual);
+      if (
+        manual &&
+        result &&
+        typeof result === "object" &&
+        "checking" in result &&
+        result.checking === false &&
+        !("error" in result && result.error)
+      ) {
+        setStatus({
+          phase: "error",
+          source: "manual",
+          message:
+            "This build cannot auto-update. Download the latest installer from GitHub Releases.",
+        });
+      }
     },
-    [desktop],
+    [],
   );
 
   const downloadUpdate = useCallback(async () => {
-    await desktop?.downloadAppUpdate?.();
-  }, [desktop]);
+    await getDesktopBridge()?.downloadAppUpdate?.();
+  }, []);
 
   const installUpdate = useCallback(async () => {
-    await desktop?.installAppUpdate?.();
-  }, [desktop]);
+    await getDesktopBridge()?.installAppUpdate?.();
+  }, []);
 
   const dismissAvailable = useCallback(() => {
     if (status.version) {

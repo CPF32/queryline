@@ -150,7 +150,12 @@ def _stream_ollama(
                 line = raw_line.decode("utf-8").strip()
                 if not line:
                     continue
-                data = json.loads(line)
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise RuntimeError(
+                        f"Ollama returned malformed JSON: {line[:200]}"
+                    ) from exc
                 message = data.get("message") or {}
 
                 thinking = message.get("thinking") or ""

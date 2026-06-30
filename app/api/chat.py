@@ -80,13 +80,24 @@ def generate_sql_stream():
     history = [message.model_dump() for message in body.conversation_history]
 
     def event_stream():
-        for event in sql_generation_service.stream_generate_sql(
-            body.question,
-            body.data_source_id,
-            conversation_history=history,
-            retry_context=body.retry_context,
-        ):
-            yield f"data: {json.dumps(event)}\n\n"
+        # Keep the client connection alive while schema/LLM work happens offline.
+        yield ": connected\n\n"
+        try:
+            for event in sql_generation_service.stream_generate_sql(
+                body.question,
+                body.data_source_id,
+                conversation_history=history,
+                retry_context=body.retry_context,
+            ):
+                yield f"data: {json.dumps(event)}\n\n"
+        except Exception as exc:
+            payload = {
+                "type": "error",
+                "code": "sql_generation_failed",
+                "message": str(exc),
+                "details": None,
+            }
+            yield f"data: {json.dumps(payload)}\n\n"
 
     return Response(
         stream_with_context(event_stream()),

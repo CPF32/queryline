@@ -35,6 +35,10 @@ import type {
 
 const API_BASE = "/api/v1";
 
+export function isDesktopApp(): boolean {
+  return typeof window.desktopApp !== "undefined";
+}
+
 declare global {
   interface Window {
     desktopApp?: {
@@ -421,7 +425,16 @@ function parseSseEvent(raw: string): SqlStreamEvent | null {
   if (!json) {
     return null;
   }
-  return JSON.parse(json) as SqlStreamEvent;
+  try {
+    return JSON.parse(json) as SqlStreamEvent;
+  } catch {
+    throw new ApiRequestError(
+      500,
+      "stream_failed",
+      "Received a malformed response while generating SQL.",
+      null,
+    );
+  }
 }
 
 export async function generateSqlStream(
@@ -463,34 +476,46 @@ export async function generateSqlStream(
   let buffer = "";
   let result: GenerateSqlResponse | null = null;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
 
-    buffer += decoder.decode(value, { stream: true });
-    const { events, remainder } = splitSseBuffer(buffer);
-    buffer = remainder;
+      buffer += decoder.decode(value, { stream: true });
+      const { events, remainder } = splitSseBuffer(buffer);
+      buffer = remainder;
 
-    for (const rawEvent of events) {
-      const event = parseSseEvent(rawEvent);
-      if (!event) {
-        continue;
-      }
-      onEvent(event);
-      if (event.type === "complete") {
-        result = event.data;
-      }
-      if (event.type === "error") {
-        throw new ApiRequestError(
-          422,
-          event.code,
-          event.message,
-          event.details ?? null,
-        );
+      for (const rawEvent of events) {
+        const event = parseSseEvent(rawEvent);
+        if (!event) {
+          continue;
+        }
+        onEvent(event);
+        if (event.type === "complete") {
+          result = event.data;
+        }
+        if (event.type === "error") {
+          throw new ApiRequestError(
+            422,
+            event.code,
+            event.message,
+            event.details ?? null,
+          );
+        }
       }
     }
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      throw error;
+    }
+    throw new ApiRequestError(
+      0,
+      "stream_interrupted",
+      error instanceof Error ? error.message : "Stream interrupted",
+      null,
+    );
   }
 
   if (buffer.trim()) {

@@ -439,14 +439,30 @@ def stream_generate_sql(
     embedding_cache: MetadataEmbeddingCache | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Stream SQL generation events for the chat UI."""
-    prepared = _prepare_sql_generation(
-        question,
-        data_source_id,
-        conversation_history=conversation_history,
-        retry_context=retry_context,
-        metadata_bundle=metadata_bundle,
-        embedding_cache=embedding_cache,
-    )
+    yield {"type": "started"}
+
+    try:
+        prepared = _prepare_sql_generation(
+            question,
+            data_source_id,
+            conversation_history=conversation_history,
+            retry_context=retry_context,
+            metadata_bundle=metadata_bundle,
+            embedding_cache=embedding_cache,
+        )
+    except Exception as exc:
+        yield {
+            "type": "error",
+            "code": "sql_generation_failed",
+            "message": str(exc),
+            "details": {
+                "explanation": "Failed to prepare SQL generation context.",
+                "attempt_number": 1,
+                "matched_glossary_terms": [],
+            },
+        }
+        return
+
     if isinstance(prepared, SqlGenerationResult):
         yield {
             "type": "error",
@@ -460,7 +476,21 @@ def stream_generate_sql(
         }
         return
 
-    client = claude_client or _get_claude_client()
+    try:
+        client = claude_client or _get_claude_client()
+    except Exception as exc:
+        yield {
+            "type": "error",
+            "code": "sql_generation_failed",
+            "message": str(exc),
+            "details": {
+                "explanation": "Failed to initialize the configured language model.",
+                "attempt_number": prepared.attempt,
+                "matched_glossary_terms": prepared.matched_glossary_terms,
+            },
+        }
+        return
+
     try:
         for event in stream_sql_generation(
             system_prompt=prepared.system_prompt,

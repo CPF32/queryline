@@ -22,7 +22,16 @@ function send(channel, payload) {
 
 function checkForAppUpdates(source = "auto") {
   if (!app.isPackaged) {
-    return Promise.resolve({ checking: false });
+    const message =
+      "Auto-update only works in the packaged installer build, not dev Electron runs.";
+    if (source === "manual") {
+      send("app-update-status", {
+        phase: "error",
+        source: "manual",
+        message,
+      });
+    }
+    return Promise.resolve({ checking: false, error: message });
   }
 
   lastCheckSource = source === "manual" ? "manual" : "auto";

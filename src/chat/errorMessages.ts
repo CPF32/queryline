@@ -72,6 +72,36 @@ const ERROR_TEMPLATES: Record<ChatErrorKind, ErrorTemplate> = {
   },
 };
 
+function isTransportFailure(message: string | undefined): boolean {
+  if (!message) {
+    return false;
+  }
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("network error") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("load failed") ||
+    lower.includes("networkerror") ||
+    lower.includes("aborted") ||
+    lower.includes("stream")
+  );
+}
+
+function buildTransportChatError(rawMessage?: string): ChatErrorState {
+  const isDesktop = typeof window !== "undefined" && Boolean(window.desktopApp);
+  return {
+    kind: "network",
+    title: "Connection lost during chat",
+    message: isDesktop
+      ? "The connection to the local Queryline backend was interrupted while generating SQL."
+      : "The connection to the analytics API was interrupted while generating SQL.",
+    suggestion: isDesktop
+      ? "Quit and reopen Queryline, then try a short question. If Ollama runs on another machine, confirm that server is reachable and the model supports tool calling."
+      : "Ensure the backend is running, then try a shorter question. If Ollama is remote, check latency and firewall rules.",
+    rawMessage,
+  };
+}
+
 export function buildChatError(
   kind: ChatErrorKind,
   rawMessage?: string,
@@ -86,14 +116,23 @@ export function buildChatError(
 
 export function mapApiErrorToChatError(error: unknown): ChatErrorState {
   if (!(error instanceof ApiRequestError)) {
-    return buildChatError(
-      "network",
-      error instanceof Error ? error.message : undefined,
-    );
+    const rawMessage = error instanceof Error ? error.message : undefined;
+    if (isTransportFailure(rawMessage)) {
+      return buildTransportChatError(rawMessage);
+    }
+    return buildChatError("network", rawMessage);
   }
 
   const code = error.code.toUpperCase();
   const message = error.message.toLowerCase();
+
+  if (
+    code === "STREAM_INCOMPLETE" ||
+    code === "STREAM_INTERRUPTED" ||
+    code === "STREAM_FAILED"
+  ) {
+    return buildChatError("generation_failed", error.message);
+  }
 
   if (
     code.includes("VALIDATION") ||

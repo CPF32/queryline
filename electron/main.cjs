@@ -69,8 +69,8 @@ async function createWindow() {
     return permission === "media" || permission === "audioCapture";
   });
 
-  await mainWindow.loadURL(backendUrl);
   initAutoUpdater(mainWindow);
+  await mainWindow.loadURL(backendUrl);
 }
 
 const gotLock = app.requestSingleInstanceLock();
