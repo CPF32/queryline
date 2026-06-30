@@ -26,6 +26,30 @@ def test_get_llm_settings(client, env_file, monkeypatch):
     assert data["env_file_path"] == str(env_file)
 
 
+def test_saved_env_file_overrides_stale_process_env(client, env_file, monkeypatch):
+    env_file.write_text(
+        "\n".join(
+            [
+                "ANTHROPIC_API_KEY=existing-key",
+                "LLM_PROVIDER=ollama",
+                "OLLAMA_BASE_URL=http://chat.ogam.local:11434",
+                "OLLAMA_MODEL=qwen3.5:4b",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+    monkeypatch.setenv("OLLAMA_MODEL", "llama3.1:3b")
+
+    response = client.get("/api/admin/llm-settings")
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+    assert data["provider"] == "ollama"
+    assert data["ollama_base_url"] == "http://chat.ogam.local:11434"
+    assert data["ollama_model"] == "qwen3.5:4b"
+
+
 def test_update_llm_settings_writes_env(client, env_file):
     response = client.put(
         "/api/admin/llm-settings",

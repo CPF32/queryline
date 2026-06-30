@@ -126,11 +126,18 @@ export function mapApiErrorToChatError(error: unknown): ChatErrorState {
   const code = error.code.toUpperCase();
   const message = error.message.toLowerCase();
 
+  if (isTransportFailure(error.message)) {
+    return buildTransportChatError(error.message);
+  }
+
   if (
     code === "STREAM_INCOMPLETE" ||
     code === "STREAM_INTERRUPTED" ||
     code === "STREAM_FAILED"
   ) {
+    if (isTransportFailure(error.message)) {
+      return buildTransportChatError(error.message);
+    }
     return buildChatError("generation_failed", error.message);
   }
 
@@ -165,6 +172,21 @@ export function mapApiErrorToChatError(error: unknown): ChatErrorState {
       message.includes("resource_exhausted")
     ) {
       return buildChatError("llm_quota", error.message);
+    }
+    if (
+      message.includes("cannot reach ollama") ||
+      message.includes("ollama request failed") ||
+      message.includes("not available") ||
+      message.includes("model")
+    ) {
+      return {
+        kind: "generation_failed",
+        title: "Could not generate SQL",
+        message: error.message,
+        suggestion:
+          "Check Admin → LLM Settings: provider Ollama, correct base URL, and a model that exists on that server.",
+        rawMessage: error.message,
+      };
     }
     return buildChatError("generation_failed", error.message);
   }

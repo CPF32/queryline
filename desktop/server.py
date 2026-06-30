@@ -37,7 +37,7 @@ def main() -> None:
 
         from app.paths import get_env_file_path
 
-        load_dotenv(get_env_file_path())
+        load_dotenv(get_env_file_path(), override=True)
     except ImportError:
         pass
 

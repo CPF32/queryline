@@ -102,7 +102,6 @@ def generate_sql_stream():
     return Response(
         stream_with_context(event_stream()),
         mimetype="text/event-stream",
-        direct_passthrough=True,
         headers={
             "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no",

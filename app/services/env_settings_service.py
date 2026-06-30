@@ -42,11 +42,12 @@ def _read_env_file() -> dict[str, str | None]:
 
 
 def _effective_value(key: str, file_values: dict[str, str | None]) -> str:
-    if key in os.environ and os.environ[key]:
-        return os.environ[key]
+    """Prefer values persisted in the app ``.env`` over inherited process env."""
     file_value = file_values.get(key)
     if file_value:
         return file_value
+    if key in os.environ and os.environ[key]:
+        return os.environ[key]
     return DEFAULTS.get(key, "")
 
 
