@@ -18,7 +18,10 @@ export default function UpdateBanner() {
     availableVersion &&
     dismissedVersion !== availableVersion;
 
-  const showErrorBanner = status.phase === "error" && !dismissedError;
+  const showErrorBanner =
+    status.phase === "error" &&
+    !dismissedError &&
+    (status.source === "manual" || Boolean(status.manualDownloadUrl));
 
   if (!showAvailableBanner && !showErrorBanner) {
     return null;
@@ -34,6 +37,15 @@ export default function UpdateBanner() {
           </span>
         </div>
         <div className="update-banner__actions">
+          {status.manualDownloadUrl && (
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              onClick={() => void downloadUpdate()}
+            >
+              Open releases
+            </button>
+          )}
           <button type="button" className="btn btn--ghost btn--sm" onClick={dismissError}>
             Dismiss
           </button>
@@ -75,7 +87,13 @@ export default function UpdateBanner() {
           disabled={status.phase === "downloading"}
           onClick={() => void handleUpdate()}
         >
-          {status.phase === "ready" ? "Restart and update" : "Update"}
+          {status.phase === "ready"
+            ? "Restart and update"
+            : status.phase === "downloading"
+              ? "Downloading…"
+              : status.fallback
+                ? "Download from GitHub"
+                : "Update"}
         </button>
       </div>
     </div>

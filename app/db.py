@@ -259,8 +259,30 @@ def _ensure_optional_columns() -> None:
                 )
 
 
+def _ensure_owner_developer_flags() -> None:
+    from app.services import setup_service
+
+    state = setup_service.ensure_bootstrapped()
+    owner_username = state.get("owner_username")
+    if not owner_username:
+        return
+
+    rows = UserRow.query.all()
+    updated = False
+    for row in rows:
+        if not setup_service.is_owner_user(username=row.username, domain=row.domain):
+            continue
+        if not row.is_admin or not row.is_developer:
+            row.is_admin = True
+            row.is_developer = True
+            updated = True
+    if updated:
+        db.session.commit()
+
+
 def init_db(app) -> None:
     db.init_app(app)
     with app.app_context():
         db.create_all()
         _ensure_optional_columns()
+        _ensure_owner_developer_flags()

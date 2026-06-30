@@ -97,6 +97,10 @@ def login():
             username=identity.username,
             domain=identity.domain,
         ),
+        is_developer=setup_service.is_owner_identity(
+            username=identity.username,
+            domain=identity.domain,
+        ),
     )
     set_session_user(user.id)
     return success_response(user.to_dict())

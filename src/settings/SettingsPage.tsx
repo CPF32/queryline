@@ -125,7 +125,9 @@ export default function SettingsPage() {
       return updateStatus.message ?? "Could not check for updates.";
     }
     if (updateStatus.phase === "available") {
-      return `Version ${updateStatus.version} is available.`;
+      return updateStatus.fallback
+        ? `Version ${updateStatus.version} is available on GitHub.`
+        : `Version ${updateStatus.version} is available.`;
     }
     if (updateStatus.phase === "downloading") {
       return typeof updateStatus.percent === "number"
@@ -142,9 +144,21 @@ export default function SettingsPage() {
       return `Installed version ${currentVersion}.`;
     }
     if (!isDesktop) {
-      return "You are in browser mode. Open the Queryline desktop app (not a browser tab) to check for updates here.";
+      return "Browser mode cannot auto-update. Install the Queryline desktop app, then check for updates here.";
     }
-    return "Updates are checked against GitHub Releases.";
+    return "Updates compare your installed version against GitHub Releases.";
+  })();
+
+  const showDownloadAction =
+    updateStatus.phase === "available" ||
+    updateStatus.phase === "downloading" ||
+    updateStatus.phase === "ready";
+
+  const downloadLabel = (() => {
+    if (updateStatus.phase === "ready") return "Restart and update";
+    if (updateStatus.phase === "downloading") return "Downloading…";
+    if (updateStatus.fallback) return "Download from GitHub";
+    return "Download update";
   })();
 
   return (
@@ -221,21 +235,25 @@ export default function SettingsPage() {
               <p className="settings-card__section-hint">{updateMessage}</p>
             </div>
             <div className="settings-card__footer settings-card__footer--split">
-              {updateStatus.phase === "available" ||
-              updateStatus.phase === "downloading" ||
-              updateStatus.phase === "ready" ? (
+              {showDownloadAction ? (
                 <button
                   type="button"
                   className="btn btn--primary btn--sm"
                   disabled={updateStatus.phase === "downloading"}
                   onClick={() => void handleApplyUpdate()}
                 >
-                  {updateStatus.phase === "ready"
-                    ? "Restart and update"
-                    : updateStatus.phase === "downloading"
-                      ? "Downloading…"
-                      : "Download update"}
+                  {downloadLabel}
                 </button>
+              ) : null}
+              {updateStatus.phase === "error" && updateStatus.manualDownloadUrl ? (
+                <a
+                  className="btn btn--secondary btn--sm"
+                  href={updateStatus.manualDownloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open GitHub releases
+                </a>
               ) : null}
               <button
                 type="button"

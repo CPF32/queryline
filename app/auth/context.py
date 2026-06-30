@@ -77,6 +77,10 @@ def init_auth(app: Flask) -> None:
                 username=identity.username,
                 domain=identity.domain,
             ),
+            is_developer=setup_service.is_owner_identity(
+                username=identity.username,
+                domain=identity.domain,
+            ),
         )
 
 

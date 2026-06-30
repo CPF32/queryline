@@ -1,5 +1,6 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
+const semver = require("semver");
 
 /** @type {import("electron").BrowserWindow | null} */
 let targetWindow = null;
@@ -10,13 +11,95 @@ let lastStatus = { phase: "idle" };
 /** @type {"auto" | "manual"} */
 let lastCheckSource = "auto";
 
+const GITHUB_OWNER = "CPF32";
+const GITHUB_REPO = "queryline";
+const RELEASES_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.allowPrerelease = false;
 
 function send(channel, payload) {
   lastStatus = payload;
   if (targetWindow && !targetWindow.isDestroyed()) {
     targetWindow.webContents.send(channel, payload);
+  }
+}
+
+async function checkGitHubRelease() {
+  const response = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "Queryline-Updater",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`GitHub Releases API returned ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const latestVersion = String(payload.tag_name || "").replace(/^v/, "").trim();
+  const currentVersion = app.getVersion();
+
+  if (!latestVersion || !semver.valid(latestVersion)) {
+    throw new Error("Could not read the latest release version from GitHub.");
+  }
+
+  const currentComparable = semver.valid(currentVersion) ? currentVersion : semver.coerce(currentVersion);
+  const updateAvailable = Boolean(
+    currentComparable && semver.gt(latestVersion, currentComparable),
+  );
+
+  return {
+    currentVersion,
+    latestVersion,
+    releaseNotes: typeof payload.body === "string" ? payload.body : null,
+    releaseUrl: typeof payload.html_url === "string" ? payload.html_url : RELEASES_URL,
+    updateAvailable,
+  };
+}
+
+async function applyGitHubFallback(source, primaryError) {
+  try {
+    const github = await checkGitHubRelease();
+    if (github.updateAvailable) {
+      send("app-update-status", {
+        phase: "available",
+        source,
+        version: github.latestVersion,
+        currentVersion: github.currentVersion,
+        releaseNotes: github.releaseNotes,
+        manualDownloadUrl: github.releaseUrl,
+        fallback: true,
+        message:
+          `Version ${github.latestVersion} is available on GitHub. ` +
+          "Automatic download is unavailable in this build, so use Download from GitHub.",
+      });
+      return { checking: false, fallback: true, updateAvailable: true };
+    }
+
+    send("app-update-status", {
+      phase: "up-to-date",
+      source,
+      currentVersion: github.currentVersion,
+      message: `You're on the latest version (${github.currentVersion}).`,
+    });
+    return { checking: false, upToDate: true };
+  } catch (fallbackError) {
+    const message = primaryError
+      ? `${primaryError}. GitHub fallback also failed: ${fallbackError.message}`
+      : fallbackError.message;
+    send("app-update-status", {
+      phase: "error",
+      source,
+      message,
+      manualDownloadUrl: RELEASES_URL,
+    });
+    return { checking: false, error: message };
   }
 }
 
@@ -29,6 +112,7 @@ function checkForAppUpdates(source = "auto") {
         phase: "error",
         source: "manual",
         message,
+        manualDownloadUrl: RELEASES_URL,
       });
     }
     return Promise.resolve({ checking: false, error: message });
@@ -36,16 +120,12 @@ function checkForAppUpdates(source = "auto") {
 
   lastCheckSource = source === "manual" ? "manual" : "auto";
   send("app-update-status", { phase: "checking", source: lastCheckSource });
+
   return autoUpdater.checkForUpdates().then(
     () => ({ checking: true }),
     (error) => {
-      console.warn("[updater]", error.message);
-      send("app-update-status", {
-        phase: "error",
-        source: lastCheckSource,
-        message: error.message,
-      });
-      return { checking: false, error: error.message };
+      console.warn("[updater] electron-updater failed:", error.message);
+      return applyGitHubFallback(lastCheckSource, error.message);
     },
   );
 }
@@ -66,7 +146,9 @@ function initAutoUpdater(mainWindow) {
       phase: "available",
       source: lastCheckSource,
       version: info.version,
+      currentVersion: app.getVersion(),
       releaseNotes: info.releaseNotes ?? null,
+      fallback: false,
     });
   });
 
@@ -79,11 +161,8 @@ function initAutoUpdater(mainWindow) {
   });
 
   autoUpdater.on("error", (error) => {
-    send("app-update-status", {
-      phase: "error",
-      source: lastCheckSource,
-      message: error.message,
-    });
+    console.warn("[updater] autoUpdater error:", error.message);
+    void applyGitHubFallback(lastCheckSource, error.message);
   });
 
   autoUpdater.on("download-progress", (progress) => {
@@ -93,6 +172,7 @@ function initAutoUpdater(mainWindow) {
       transferred: progress.transferred,
       total: progress.total,
       version: lastStatus.version,
+      fallback: false,
     });
   });
 
@@ -100,6 +180,7 @@ function initAutoUpdater(mainWindow) {
     send("app-update-status", {
       phase: "ready",
       version: info.version,
+      fallback: false,
     });
   });
 }
@@ -113,9 +194,18 @@ function registerUpdaterIpc(ipcMain) {
     checkForAppUpdates(manual ? "manual" : "auto"),
   );
 
+  ipcMain.handle("open-release-page", (_event, url = RELEASES_URL) => {
+    void shell.openExternal(url || RELEASES_URL);
+    return { opened: true };
+  });
+
   ipcMain.handle("download-app-update", async () => {
     if (!app.isPackaged) {
       return { started: false };
+    }
+    if (lastStatus.fallback || lastStatus.phase === "error" || lastStatus.manualDownloadUrl) {
+      await shell.openExternal(String(lastStatus.manualDownloadUrl || RELEASES_URL));
+      return { started: true, fallback: true };
     }
     await autoUpdater.downloadUpdate();
     return { started: true };
@@ -123,6 +213,9 @@ function registerUpdaterIpc(ipcMain) {
 
   ipcMain.handle("install-app-update", () => {
     if (!app.isPackaged) {
+      return { installed: false };
+    }
+    if (lastStatus.fallback) {
       return { installed: false };
     }
     autoUpdater.quitAndInstall(false, true);
@@ -134,4 +227,5 @@ module.exports = {
   initAutoUpdater,
   registerUpdaterIpc,
   checkForAppUpdates,
+  RELEASES_URL,
 };

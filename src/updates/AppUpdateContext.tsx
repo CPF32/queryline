@@ -26,6 +26,8 @@ export interface AppUpdateStatus {
   message?: string;
   releaseNotes?: string | null;
   source?: string;
+  manualDownloadUrl?: string;
+  fallback?: boolean;
 }
 
 interface AppUpdateContextValue {
@@ -52,6 +54,9 @@ function normalizeStatus(raw: Record<string, unknown>): AppUpdateStatus {
     message: typeof raw.message === "string" ? raw.message : undefined,
     releaseNotes: typeof raw.releaseNotes === "string" ? raw.releaseNotes : null,
     source: typeof raw.source === "string" ? raw.source : undefined,
+    manualDownloadUrl:
+      typeof raw.manualDownloadUrl === "string" ? raw.manualDownloadUrl : undefined,
+    fallback: raw.fallback === true,
   };
 }
 
@@ -118,20 +123,8 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
 
       setDismissedError(false);
       const result = await desktop.checkForAppUpdate(manual);
-      if (
-        manual &&
-        result &&
-        typeof result === "object" &&
-        "checking" in result &&
-        result.checking === false &&
-        !("error" in result && result.error)
-      ) {
-        setStatus({
-          phase: "error",
-          source: "manual",
-          message:
-            "This build cannot auto-update. Download the latest installer from GitHub Releases.",
-        });
+      if (result && typeof result === "object" && "error" in result && result.error) {
+        return;
       }
     },
     [],

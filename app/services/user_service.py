@@ -43,7 +43,12 @@ def get_or_create_user(
     domain: str | None,
     display_name: str,
     is_admin: bool,
+    is_developer: bool = False,
 ) -> User:
+    is_owner = setup_service.is_owner_user(username=username, domain=domain)
+    effective_admin = is_admin or is_owner or is_developer
+    effective_developer = is_developer or is_owner
+
     row = _find_user_row(username=username, domain=domain)
     now = utc_now_iso()
     if row is None:
@@ -52,15 +57,18 @@ def get_or_create_user(
             username=username,
             domain=domain,
             display_name=display_name,
-            is_admin=is_admin,
+            is_admin=effective_admin,
+            is_developer=effective_developer,
             created_at=now,
             last_seen_at=now,
         )
         db.session.add(row)
     else:
         row.last_seen_at = now
-        if is_admin:
+        if effective_admin:
             row.is_admin = True
+        if effective_developer:
+            row.is_developer = True
     db.session.commit()
     return _user_from_row(row)
 

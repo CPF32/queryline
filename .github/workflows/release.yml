@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            args: --mac dmg zip
+            args: --mac dmg zip --universal
           - os: windows-latest
             args: --win nsis
           - os: ubuntu-latest

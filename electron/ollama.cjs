@@ -81,10 +81,11 @@ function recommendModel(totalRamGb) {
 }
 
 async function getOllamaStatus(baseUrl = "http://127.0.0.1:11434") {
+  const normalized = baseUrl.replace(/\/$/, "");
+  const healthUrl = `${normalized}/api/tags`;
+  const running = await isReachable(healthUrl);
   const installed = Boolean(resolveOllamaBinary());
-  const healthUrl = `${baseUrl.replace(/\/$/, "")}/api/tags`;
-  const running = installed ? await isReachable(healthUrl) : false;
-  return { installed, running, baseUrl };
+  return { installed, running, baseUrl: normalized };
 }
 
 async function waitForOllama(baseUrl, timeoutMs = OLLAMA_HEALTH_TIMEOUT_MS) {
@@ -187,8 +188,23 @@ async function installOllama(onProgress) {
 }
 
 async function ensureOllamaRunning(baseUrl = "http://127.0.0.1:11434") {
-  const status = await getOllamaStatus(baseUrl);
+  const normalized = baseUrl.replace(/\/$/, "");
+  const status = await getOllamaStatus(normalized);
   if (status.running) {
+    return status;
+  }
+
+  let hostname = "";
+  try {
+    hostname = new URL(normalized).hostname;
+  } catch {
+    hostname = "";
+  }
+  const isLocal =
+    hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
+
+  if (!isLocal) {
+    console.warn(`[ollama] remote server not reachable at ${normalized}`);
     return status;
   }
 
@@ -197,7 +213,7 @@ async function ensureOllamaRunning(baseUrl = "http://127.0.0.1:11434") {
     return status;
   }
 
-  return startOllama(baseUrl);
+  return startOllama(normalized);
 }
 
 async function startOllama(baseUrl = "http://127.0.0.1:11434") {

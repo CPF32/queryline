@@ -28,8 +28,8 @@ const PROVIDERS: { id: LlmProvider; label: string; description: string }[] = [
   },
   {
     id: "ollama",
-    label: "Ollama (local)",
-    description: "Run models on this machine — no API key required.",
+    label: "Ollama",
+    description: "Local or remote Ollama server — set Base URL to your host.",
   },
 ];
 
@@ -246,8 +246,16 @@ export default function LlmSettingsPage() {
         </div>
         {settings && (
           <p className="form-field__hint">
-            Status: {settings.configured ? "configured" : "not configured"} · env file:{" "}
+            Status: {settings.configured ? "configured" : "not configured"} · settings file:{" "}
             <code>{settings.env_file_path}</code>
+            {settings.env_file_path.includes("Application Support") ||
+            settings.env_file_path.includes("AppData") ||
+            settings.env_file_path.includes(".local/share") ? (
+              <>
+                {" "}
+                (desktop app — separate from browser dev <code>.env</code> in the project folder)
+              </>
+            ) : null}
           </p>
         )}
       </section>
@@ -343,15 +351,11 @@ export default function LlmSettingsPage() {
 
       {provider === "ollama" && (
         <section className="card">
-          <h2 className="card__title">Ollama (local)</h2>
+          <h2 className="card__title">Ollama</h2>
           <p className="form-field__hint">
-            Install Ollama from{" "}
-            <a href="https://ollama.com" target="_blank" rel="noreferrer">
-              ollama.com
-            </a>
-            , then run <code>ollama pull {ollamaModel || "llama3.1"}</code>. Ollama runs as a
-            system service (default <code>http://127.0.0.1:11434</code>), not inside this project
-            folder.
+            Point Base URL at a local install (<code>http://127.0.0.1:11434</code>) or a remote
+            server on your network (for example <code>http://192.168.1.50:11434</code>). Run{" "}
+            <code>ollama pull {ollamaModel || "qwen3.5:4b"}</code> on the machine hosting Ollama.
           </p>
           <label className="form-field">
             <span className="form-field__label">Base URL</span>

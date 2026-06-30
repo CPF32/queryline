@@ -1621,6 +1621,40 @@ a.btn.btn--primary:hover:not(:disabled) {
   white-space: nowrap;
 }
 
+.diagnostic-toolbar-card {
+  padding: 0.875rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.diagnostic-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.diagnostic-toolbar__filter {
+  width: 11rem;
+  flex-shrink: 0;
+}
+
+.diagnostic-toolbar__filter .form-field__label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.diagnostic-toolbar__action {
+  min-width: 6.75rem;
+  height: 2rem;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.users-table__role-select {
+  min-width: 10.5rem;
+  max-width: 12rem;
+}
+
 .diagnostic-log__details-row td {
   background: var(--surface-elevated);
 }

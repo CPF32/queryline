@@ -112,9 +112,9 @@ def _identity_matches(
         return False
     if username.lower() != owner_username.lower():
         return False
-    if owner_domain:
-        return (domain or "").lower() == owner_domain.lower()
-    return domain is None or domain == ""
+    if not owner_domain or not domain:
+        return True
+    return domain.lower() == owner_domain.lower()
 
 
 def is_owner_identity(*, username: str, domain: str | None) -> bool:

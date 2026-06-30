@@ -57,7 +57,25 @@ function readEnvValue(key, defaultValue = "") {
   return defaultValue;
 }
 
+function isLocalOllamaUrl(baseUrl) {
+  try {
+    const { hostname } = new URL(baseUrl);
+    return (
+      hostname === "127.0.0.1" ||
+      hostname === "localhost" ||
+      hostname === "::1"
+    );
+  } catch {
+    return false;
+  }
+}
+
 function shouldAutoStartOllama() {
+  const baseUrl = getOllamaBaseUrl();
+  if (!isLocalOllamaUrl(baseUrl)) {
+    return false;
+  }
+
   const state = readSetupState();
   if (state?.ollama_self_host === true) {
     return true;

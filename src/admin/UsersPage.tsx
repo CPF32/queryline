@@ -22,6 +22,12 @@ function roleFlags(role: string): { is_admin: boolean; is_developer: boolean } {
   };
 }
 
+function roleValue(user: User): string {
+  if (user.is_developer) return "developer";
+  if (user.is_admin) return "admin";
+  return "user";
+}
+
 function roleLabel(user: User): string {
   if (user.is_owner) return "Owner";
   if (user.is_developer) return "Developer";
@@ -38,6 +44,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -86,33 +93,26 @@ export default function UsersPage() {
     }
   };
 
-  const handleToggleDeveloper = async (user: User) => {
+  const handleRoleChange = async (user: User, nextRole: string) => {
     if (user.is_owner) {
-      showError("The machine owner always has developer access.");
       return;
     }
-    try {
-      const updated = await updateUser(user.id, { is_developer: !user.is_developer });
-      setUsers((current) =>
-        current.map((item) => (item.id === user.id ? updated : item)),
-      );
-    } catch (err) {
-      showError(err instanceof Error ? err.message : "Failed to update user");
+    const currentRole = roleValue(user);
+    if (nextRole === currentRole) {
+      return;
     }
-  };
 
-  const handleToggleAdmin = async (user: User) => {
-    if (user.is_owner && user.is_admin) {
-      showError("The machine owner account cannot be demoted.");
-      return;
-    }
+    setUpdatingUserId(user.id);
     try {
-      const updated = await updateUser(user.id, { is_admin: !user.is_admin });
+      const updated = await updateUser(user.id, roleFlags(nextRole));
       setUsers((current) =>
         current.map((item) => (item.id === user.id ? updated : item)),
       );
+      showSuccess(`Updated ${user.display_name} to ${ROLE_OPTIONS.find((o) => o.value === nextRole)?.label ?? nextRole}.`);
     } catch (err) {
       showError(err instanceof Error ? err.message : "Failed to update user");
+    } finally {
+      setUpdatingUserId(null);
     }
   };
 
@@ -136,7 +136,7 @@ export default function UsersPage() {
     <div className="page page--users">
       <PageHeader
         title="Users & roles"
-        description="Provision users before their first sign-in. Developers are administrators with access to diagnostic logs."
+        description="Assign Developer to grant Admin → Diagnostics access. The machine owner always has developer access."
       />
 
       <section className="card settings-section users-add-section">
@@ -204,47 +204,35 @@ export default function UsersPage() {
                     <td>{user.display_name}</td>
                     <td>{formatIdentity(user)}</td>
                     <td>
-                      <span
-                        className={`badge ${
-                          user.is_admin || user.is_developer ? "badge--success" : "badge--muted"
-                        }`}
-                      >
-                        {roleLabel(user)}
-                      </span>
+                      {user.is_owner ? (
+                        <span className="badge badge--success">{roleLabel(user)}</span>
+                      ) : (
+                        <div className="users-table__role-select">
+                          <Select
+                            value={roleValue(user)}
+                            onChange={(value) => void handleRoleChange(user, value)}
+                            options={ROLE_OPTIONS}
+                            size="sm"
+                            fullWidth
+                            disabled={updatingUserId === user.id}
+                            aria-label={`Role for ${user.display_name}`}
+                          />
+                        </div>
+                      )}
                     </td>
                     <td className="query-log-table__time">
                       {new Date(user.last_seen_at).toLocaleString()}
                     </td>
                     <td>
-                      <div className="btn-group">
-                        {!user.is_owner && (
-                          <button
-                            type="button"
-                            className="btn btn--secondary btn--sm"
-                            onClick={() => void handleToggleDeveloper(user)}
-                          >
-                            {user.is_developer ? "Revoke developer" : "Make developer"}
-                          </button>
-                        )}
-                        {!user.is_owner && (
-                          <button
-                            type="button"
-                            className="btn btn--secondary btn--sm"
-                            onClick={() => void handleToggleAdmin(user)}
-                          >
-                            {user.is_admin ? "Revoke admin" : "Make admin"}
-                          </button>
-                        )}
-                        {!user.is_owner && (
-                          <button
-                            type="button"
-                            className="btn btn--danger btn--sm"
-                            onClick={() => void handleDelete(user)}
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
+                      {!user.is_owner && (
+                        <button
+                          type="button"
+                          className="btn btn--danger btn--sm"
+                          onClick={() => void handleDelete(user)}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

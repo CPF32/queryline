@@ -5,6 +5,7 @@ import PageHeader, {
   ErrorState,
   LoadingState,
 } from "@/admin/AdminUi";
+import Select from "@/components/Select";
 import { useSnackbar } from "@/components/snackbar/SnackbarProvider";
 import type { DiagnosticLogEntry } from "@/types/contracts";
 
@@ -82,44 +83,42 @@ export default function DiagnosticLogsPage() {
       <PageHeader
         title="Diagnostic logs"
         description="Underlying server and client errors for troubleshooting. Visible to developers only."
-        actions={
-          <div className="btn-group">
-            <label className="form-field form-field--compact">
-              <span className="form-field__label">Level</span>
-              <select
-                className="form-field__input"
-                value={level}
-                onChange={(event) => {
-                  setLevel(event.target.value);
-                  setOffset(0);
-                }}
-              >
-                {LEVEL_OPTIONS.map((option) => (
-                  <option key={option.value || "all"} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              onClick={() => void load()}
-              disabled={loading}
-            >
-              Refresh
-            </button>
-            <button
-              type="button"
-              className="btn btn--danger btn--sm"
-              onClick={() => void handleClear()}
-              disabled={clearing || loading || total === 0}
-            >
-              {clearing ? "Clearing…" : "Clear all"}
-            </button>
-          </div>
-        }
       />
+
+      <section className="card diagnostic-toolbar-card">
+        <div className="diagnostic-toolbar">
+          <div className="diagnostic-toolbar__filter">
+            <span className="form-field__label">Level</span>
+            <Select
+              value={level}
+              onChange={(value) => {
+                setLevel(value);
+                setOffset(0);
+              }}
+              options={LEVEL_OPTIONS}
+              size="sm"
+              fullWidth
+              aria-label="Filter by level"
+            />
+          </div>
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm diagnostic-toolbar__action"
+            onClick={() => void load()}
+            disabled={loading}
+          >
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+          <button
+            type="button"
+            className="btn btn--danger btn--sm diagnostic-toolbar__action"
+            onClick={() => void handleClear()}
+            disabled={clearing || loading || total === 0}
+          >
+            {clearing ? "Clearing…" : "Clear all"}
+          </button>
+        </div>
+      </section>
 
       {loading && <LoadingState message="Loading diagnostic logs…" />}
       {error && !loading && <ErrorState message={error} onRetry={load} />}
