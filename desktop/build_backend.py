@@ -51,7 +51,7 @@ def _darwin_arch_prefix(target_arch: str) -> list[str]:
         return []
     if target_arch == "x86_64" and host in {"x86_64", "amd64"}:
         return []
-    arch_flag = "arm64" if target_arch == "arm64" else "x86_64"
+    arch_flag = "-arm64" if target_arch == "arm64" else "-x86_64"
     return ["/usr/bin/arch", arch_flag]
 
 
