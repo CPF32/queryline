@@ -45,11 +45,19 @@ def _pyinstaller_command(*, distpath: Path, workpath: Path) -> list[str]:
     ]
 
 
+def _darwin_arch_prefix(target_arch: str) -> list[str]:
+    host = platform.machine().lower()
+    if target_arch == "arm64" and host in {"arm64", "aarch64"}:
+        return []
+    if target_arch == "x86_64" and host in {"x86_64", "amd64"}:
+        return []
+    arch_flag = "arm64" if target_arch == "arm64" else "x86_64"
+    return ["/usr/bin/arch", arch_flag]
+
+
 def _run_pyinstaller(*, distpath: Path, workpath: Path, darwin_arch: str | None = None) -> None:
     cmd = _pyinstaller_command(distpath=distpath, workpath=workpath)
-    prefix: list[str] = []
-    if darwin_arch is not None:
-        prefix = ["arch", darwin_arch]
+    prefix = _darwin_arch_prefix(darwin_arch) if darwin_arch is not None else []
 
     label = darwin_arch or platform.machine()
     print(f"Building backend bundle ({label})...")
