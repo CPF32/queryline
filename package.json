@@ -83,7 +83,6 @@
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Queryline uses the microphone for voice input when asking data questions."
       },
-      "x64ArchFiles": "**/text-to-sql-backend",
       "target": [
         "dmg",
         "zip"
