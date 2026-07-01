@@ -34,9 +34,9 @@ def _clean_output() -> None:
     WORK_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _python_machine(python_executable: str) -> str:
+def _python_machine(python_executable: str, prefix: list[str] | None = None) -> str:
     result = subprocess.run(
-        [python_executable, "-c", "import platform; print(platform.machine())"],
+        [*(prefix or []), python_executable, "-c", "import platform; print(platform.machine())"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -62,21 +62,23 @@ def _resolve_x86_python() -> str:
 def _python_for_darwin_arch(target_arch: str) -> tuple[str, list[str]]:
     if target_arch == "arm64":
         python_executable = sys.executable
+        prefix: list[str] = []
         expected = {"arm64", "aarch64"}
     elif target_arch == "x86_64":
         python_executable = _resolve_x86_python()
+        prefix = ["/usr/bin/arch", "-x86_64"]
         expected = {"x86_64", "amd64"}
     else:
         raise ValueError(f"Unsupported macOS arch: {target_arch}")
 
-    actual = _python_machine(python_executable)
+    actual = _python_machine(python_executable, prefix)
     if actual not in expected:
         raise SystemExit(
             f"Expected {target_arch} Python for backend build, got {actual!r} "
             f"from {python_executable}"
         )
 
-    return python_executable, []
+    return python_executable, prefix
 
 
 def _pyinstaller_command(
