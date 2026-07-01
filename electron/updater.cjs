@@ -1,6 +1,5 @@
 const { app, BrowserWindow, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
-const semver = require("semver");
 
 /** @type {import("electron").BrowserWindow | null} */
 let targetWindow = null;
@@ -14,6 +13,36 @@ let lastCheckSource = "auto";
 const GITHUB_OWNER = "CPF32";
 const GITHUB_REPO = "queryline";
 const RELEASES_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+
+function normalizeVersion(version) {
+  const cleaned = String(version || "").replace(/^v/i, "").trim();
+  const match = cleaned.match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) {
+    return null;
+  }
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+function isValidVersion(version) {
+  return normalizeVersion(version) !== null;
+}
+
+function isNewerVersion(latest, current) {
+  const latestParts = normalizeVersion(latest);
+  const currentParts = normalizeVersion(current);
+  if (!latestParts || !currentParts) {
+    return false;
+  }
+  for (let index = 0; index < 3; index += 1) {
+    if (latestParts[index] > currentParts[index]) {
+      return true;
+    }
+    if (latestParts[index] < currentParts[index]) {
+      return false;
+    }
+  }
+  return false;
+}
 
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -45,13 +74,13 @@ async function checkGitHubRelease() {
   const latestVersion = String(payload.tag_name || "").replace(/^v/, "").trim();
   const currentVersion = app.getVersion();
 
-  if (!latestVersion || !semver.valid(latestVersion)) {
+  if (!latestVersion || !isValidVersion(latestVersion)) {
     throw new Error("Could not read the latest release version from GitHub.");
   }
 
-  const currentComparable = semver.valid(currentVersion) ? currentVersion : semver.coerce(currentVersion);
+  const currentComparable = normalizeVersion(currentVersion);
   const updateAvailable = Boolean(
-    currentComparable && semver.gt(latestVersion, currentComparable),
+    currentComparable && isNewerVersion(latestVersion, currentComparable),
   );
 
   return {

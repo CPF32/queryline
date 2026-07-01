@@ -1,7 +1,7 @@
 {
   "name": "text-to-sql-analytics",
   "private": true,
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Queryline — text-to-SQL analytics desktop app",
   "author": {
     "name": "Queryline",
